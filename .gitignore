@@ -1,0 +1,24 @@
+# dependencies
+node_modules/
+
+# next.js
+.next/
+out/
+next-env.d.ts
+
+# opennext / cloudflare
+.open-next/
+.wrangler/
+
+# env — NEVER commit real secrets
+.env
+.env.local
+.env*.local
+
+# misc
+.DS_Store
+*.tsbuildinfo
+
+# supabase local
+supabase/.temp/
+supabase/.branches/

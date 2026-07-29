@@ -1,0 +1,23 @@
+// Cloudflare Workers config — used only when deploying via `npm run cf:deploy`.
+// Vercel deployments ignore this file entirely.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "open-autodm",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-03-25",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  // Set your environment variables with:
+  //   npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+  //   npx wrangler secret put TOKEN_ENCRYPTION_KEY
+  //   npx wrangler secret put CRON_SECRET
+  // Public vars can go here:
+  "vars": {
+    // "NEXT_PUBLIC_SUPABASE_URL": "https://YOUR-PROJECT.supabase.co",
+    // "NEXT_PUBLIC_SUPABASE_ANON_KEY": "...",
+    // "NEXT_PUBLIC_APP_URL": "https://open-autodm.YOUR-SUBDOMAIN.workers.dev"
+  }
+}
