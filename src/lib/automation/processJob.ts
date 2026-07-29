@@ -33,9 +33,10 @@ import {
   sendInstagramCardDm,
   sendAskToFollowDm,
   replyToComment,
-  checkUserFollowsBusiness,
+  getAudienceProfile,
   type DmRecipient,
 } from '@/lib/instagram/api';
+import { updateContactProfile } from '@/lib/automation/contacts';
 import { MetaApiError, AccountPausedMetaError } from '@/lib/instagram/errors';
 
 /**
@@ -380,6 +381,21 @@ export async function processAutoDmJob(payload: AutoDmJobPayload, attempt: numbe
   });
   if (counterError) logger.warn({ err: counterError }, 'Failed to increment DM counter');
 
+  // Contacts: DM/story webhooks don't carry a username — enrich it (and the
+  // follow flag) from the profile API now that they've messaged us.
+  if (payload.triggerType !== 'comment') {
+    void getAudienceProfile(payload.triggerUserId, accessToken).then((p) => {
+      if (p) {
+        updateContactProfile({
+          instagramAccountId: payload.instagramAccountId,
+          audienceIgUserId: payload.triggerUserId,
+          username: p.username,
+          followsBusiness: p.followsBusiness,
+        });
+      }
+    });
+  }
+
   debugLog('worker', 'info', 'job_completed', 'ok', `Opening DM delivered to ${payload.triggerUserId}`, {
     automationId: payload.automationId,
     messageId,
@@ -478,7 +494,14 @@ export async function processFollowUpDmJob(payload: AutoDmJobPayload): Promise<v
   // Unknown check results FAIL OPEN (deliver) — never block a real person
   // because Meta's profile endpoint hiccuped.
   if (automation.ask_to_follow_enabled && expectedStep === 1) {
-    const follows = await checkUserFollowsBusiness(payload.triggerUserId, accessToken);
+    const audienceProfile = await getAudienceProfile(payload.triggerUserId, accessToken);
+    const follows = audienceProfile?.followsBusiness ?? null;
+    updateContactProfile({
+      instagramAccountId: payload.instagramAccountId,
+      audienceIgUserId: payload.triggerUserId,
+      username: audienceProfile?.username ?? null,
+      followsBusiness: follows,
+    });
 
     if (follows === false) {
       const confirmPayload = `SESSION_${payload.sessionId}_STEP_2`;
@@ -510,7 +533,14 @@ export async function processFollowUpDmJob(payload: AutoDmJobPayload): Promise<v
   }
 
   if (automation.ask_to_follow_enabled && expectedStep === 2) {
-    const follows = await checkUserFollowsBusiness(payload.triggerUserId, accessToken);
+    const audienceProfile = await getAudienceProfile(payload.triggerUserId, accessToken);
+    const follows = audienceProfile?.followsBusiness ?? null;
+    updateContactProfile({
+      instagramAccountId: payload.instagramAccountId,
+      audienceIgUserId: payload.triggerUserId,
+      username: audienceProfile?.username ?? null,
+      followsBusiness: follows,
+    });
 
     if (follows === false) {
       // Still not following — nudge and keep the session at step 2 so the

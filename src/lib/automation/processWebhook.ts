@@ -15,6 +15,7 @@ import { createLogger } from '@/lib/logger';
 import { debugLog } from '@/lib/debugLog';
 import { keywordMatches } from '@/lib/automation/keywordMatch';
 import { enqueueJob } from '@/lib/automation/queue';
+import { recordContactInteraction } from '@/lib/automation/contacts';
 import type {
   MetaWebhookBody,
   MetaCommentChangeValue,
@@ -147,6 +148,7 @@ async function processCommentEvent(
   });
 
   let enqueued = 0;
+  let capturedAutomationId: string | null = null;
   for (const automation of automations) {
     if (automation.post_id && automation.post_id !== comment.media.id) {
       debugLog('webhook', 'info', 'post_filter', 'skipped', `Automation ${automation.id}: different post`, {
@@ -184,8 +186,19 @@ async function processCommentEvent(
     const jobId = await enqueueJob('auto_dm', payload, `event_${automation.id}_${comment.id}`);
     if (jobId) {
       enqueued += 1;
+      capturedAutomationId = capturedAutomationId ?? (automation.id as string);
       debugLog('webhook', 'info', 'job_enqueued', 'ok', `AutoDM job enqueued — ${jobId}`, { jobId });
     }
+  }
+
+  if (enqueued > 0) {
+    recordContactInteraction({
+      instagramAccountId,
+      audienceIgUserId: comment.from.id,
+      username: comment.from.username ?? null,
+      triggerType: 'comment',
+      automationId: capturedAutomationId,
+    });
   }
   return enqueued;
 }
@@ -278,6 +291,14 @@ async function processDmEvent(
           sessionId,
           sessionStep,
         });
+        if (jobId) {
+          recordContactInteraction({
+            instagramAccountId,
+            audienceIgUserId: messaging.sender.id,
+            triggerType: 'button',
+            automationId: session.automation_id as string,
+          });
+        }
         return jobId ? 1 : 0;
       }
     }
@@ -320,6 +341,7 @@ async function processDmEvent(
   }
 
   let enqueued = 0;
+  let capturedAutomationId: string | null = null;
   for (const automation of automations) {
     if (!keywordMatches(message.text, automation.keywords as string[] | null)) {
       debugLog('webhook', 'info', 'keyword_match', 'skipped', `${automationType} ${automation.id}: no keyword match`, {
@@ -346,7 +368,19 @@ async function processDmEvent(
       messageText: message.text,
     };
     const jobId = await enqueueJob('auto_dm', payload, `event_${automation.id}_${message.mid}`);
-    if (jobId) enqueued += 1;
+    if (jobId) {
+      enqueued += 1;
+      capturedAutomationId = capturedAutomationId ?? (automation.id as string);
+    }
+  }
+
+  if (enqueued > 0) {
+    recordContactInteraction({
+      instagramAccountId,
+      audienceIgUserId: messaging.sender.id,
+      triggerType: isStoryReply ? 'story_reply' : 'dm',
+      automationId: capturedAutomationId,
+    });
   }
 
   if (enqueued === 0 && automations.length > 0) {
