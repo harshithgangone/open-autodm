@@ -71,6 +71,12 @@ export async function GET(request: Request): Promise<Response> {
     const encryptedToken = encrypt(longLived.access_token, env.TOKEN_ENCRYPTION_KEY);
     const expiresAt = new Date(Date.now() + longLived.expires_in * 1000);
 
+    // Guarantee the FK target exists. Users created in the Supabase dashboard
+    // BEFORE the migrations were applied have no profiles row (the auto-create
+    // trigger didn't exist yet) — backfill it here so the account insert can
+    // never hit a foreign-key violation.
+    await db.from('profiles').upsert({ id: userId }, { onConflict: 'id', ignoreDuplicates: true });
+
     const { error } = await db.from('instagram_accounts').upsert(
       {
         user_id: userId,
@@ -101,9 +107,29 @@ export async function GET(request: Request): Promise<Response> {
     logger.info({ userId, username: profile.username }, 'Instagram account connected');
     return settingsRedirect('instagram_connected=true');
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+    const message = describeError(err);
     logger.error({ err, userId }, 'Instagram OAuth callback failed');
     debugLog('oauth', 'error', 'oauth_failed', 'error', `OAuth exchange failed: ${message.slice(0, 300)}`, { userId });
     return settingsRedirect(`instagram_error=server_error&debug=${encodeURIComponent(message.slice(0, 200))}`);
   }
+}
+
+/**
+ * Human-readable message from anything thrown — including Supabase/Postgrest
+ * error objects, which are not Error instances and stringify to
+ * "[object Object]" otherwise.
+ */
+function describeError(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (err && typeof err === 'object') {
+    const e = err as { message?: string; details?: string; hint?: string; code?: string };
+    const parts = [e.message, e.details, e.code ? `(code ${e.code})` : null].filter(Boolean);
+    if (parts.length) return parts.join(' — ');
+    try {
+      return JSON.stringify(err).slice(0, 300);
+    } catch {
+      /* fall through */
+    }
+  }
+  return String(err);
 }
