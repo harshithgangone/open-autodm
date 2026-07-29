@@ -78,7 +78,7 @@ Copy the `*.workers.dev` URL, set it as `NEXT_PUBLIC_APP_URL` in `wrangler.jsonc
 3. The wizard walks you through everything, but in short:
    - [developers.facebook.com/apps](https://developers.facebook.com/apps) → **Create App** → use case **Other** → type **Business**.
    - In the new app: **Instagram → Set up** ("Instagram API with Instagram Login").
-   - **App settings → Basic** → copy **App ID** and **App Secret** → paste into the wizard → **Save Credentials**.
+   - **Instagram → API setup with Instagram login → 3. Set up Instagram business login** → copy the **Instagram app ID** + **Instagram app secret** shown there → paste into the wizard → **Save Credentials**. ⚠️ Use these, NOT the App ID/Secret under *App settings → Basic* — those are the parent Meta app's and Instagram login rejects them with "Invalid platform app". (Optionally also paste the Basic-settings App Secret into the wizard's Facebook App Secret field so webhook signatures verify either way.)
 4. The wizard now shows your **Callback URL** and **Verify Token**:
    - Meta portal → *Instagram → API setup with Instagram login → 2. Configure webhooks* → paste both → **Verify and save** → subscribe to **comments** and **messages**.
 5. And your **OAuth Redirect URI**:

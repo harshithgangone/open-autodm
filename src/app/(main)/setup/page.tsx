@@ -143,7 +143,7 @@ export default function SetupPage() {
                         <>Go to <a href="https://developers.facebook.com/apps" target="_blank" rel="noopener noreferrer" className="text-primary font-semibold underline underline-offset-2">developers.facebook.com/apps</a> and click <b>Create App</b>.</>,
                         <>Choose use case: <b>Other</b> → app type: <b>Business</b>.</>,
                         <>In the app dashboard, find <b>Instagram</b> → click <b>Set up</b> (this adds “Instagram API with Instagram Login”).</>,
-                        <>Under <b>App settings → Basic</b>, copy your <b>App ID</b> and <b>App Secret</b> (click “Show”).</>,
+                        <>Go to <b>Instagram → API setup with Instagram login → 3. Set up Instagram business login</b> and copy the <b>Instagram app ID</b> and <b>Instagram app secret</b> shown there. ⚠️ NOT the ones under App settings → Basic — those belong to the parent Meta app and Instagram login rejects them with “Invalid platform app”.</>,
                         <>Your Instagram account must be a <b>Business or Creator</b> account (switch in the Instagram app: Settings → Account type).</>,
                     ].map((content, i) => (
                         <li key={i} className="flex gap-3">
@@ -172,7 +172,7 @@ export default function SetupPage() {
                 )}
                 <div className="space-y-3">
                     <div>
-                        <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-1">Meta App ID</label>
+                        <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-1">Instagram App ID</label>
                         <input
                             value={appId}
                             onChange={(e) => setAppId(e.target.value)}
@@ -181,7 +181,7 @@ export default function SetupPage() {
                         />
                     </div>
                     <div>
-                        <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-1">Meta App Secret</label>
+                        <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-1">Instagram App Secret</label>
                         <input
                             type="password"
                             value={appSecret}
