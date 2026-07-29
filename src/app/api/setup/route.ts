@@ -81,9 +81,6 @@ export async function POST(request: Request): Promise<Response> {
   const user = await getAuthenticatedUser(request);
   if (!user) return unauthorized();
 
-  // Ensure env is valid before accepting credentials (fail loudly)
-  getEnv();
-
   let body: unknown;
   try {
     body = await request.json();
@@ -97,29 +94,49 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: `Validation failed — ${detail}` }, { status: 400 });
   }
 
-  // Preserve the existing verify token if one was generated before —
-  // regenerating it would silently break the webhook registered in Meta.
-  const db = createServiceClient();
-  const { data: existing } = await db
-    .from('app_settings')
-    .select('webhook_verify_token')
-    .eq('id', 1)
-    .maybeSingle();
+  try {
+    // Ensure env is valid before accepting credentials (fail loudly, but with
+    // the actual list of missing vars so the self-hoster can fix it).
+    getEnv();
 
-  const verifyToken = (existing?.webhook_verify_token as string | null) ?? randomToken(16);
+    // Preserve the existing verify token if one was generated before —
+    // regenerating it would silently break the webhook registered in Meta.
+    const db = createServiceClient();
+    const { data: existing } = await db
+      .from('app_settings')
+      .select('webhook_verify_token')
+      .eq('id', 1)
+      .maybeSingle();
 
-  await saveMetaSettings({
-    metaAppId: parsed.data.metaAppId,
-    metaAppSecret: parsed.data.metaAppSecret,
-    metaFbAppSecret: parsed.data.metaFbAppSecret ?? null,
-    webhookVerifyToken: verifyToken,
-  });
+    const verifyToken = (existing?.webhook_verify_token as string | null) ?? randomToken(16);
 
-  const appUrl = getAppUrl(request);
-  return Response.json({
-    success: true,
-    webhookVerifyToken: verifyToken,
-    webhookUrl: `${appUrl}/api/webhook`,
-    oauthRedirectUri: `${appUrl}/api/instagram/callback`,
-  });
+    await saveMetaSettings({
+      metaAppId: parsed.data.metaAppId,
+      metaAppSecret: parsed.data.metaAppSecret,
+      metaFbAppSecret: parsed.data.metaFbAppSecret ?? null,
+      webhookVerifyToken: verifyToken,
+    });
+
+    const appUrl = getAppUrl(request);
+    return Response.json({
+      success: true,
+      webhookVerifyToken: verifyToken,
+      webhookUrl: `${appUrl}/api/webhook`,
+      oauthRedirectUri: `${appUrl}/api/instagram/callback`,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    // The single most common self-hosting mistake: migrations not applied yet.
+    if (/app_settings/i.test(message) && /(find|exist|schema)/i.test(message)) {
+      return Response.json(
+        {
+          error:
+            'Database schema is missing — the migrations have not been applied to your Supabase project. ' +
+            'Run: supabase link --project-ref <your-ref> && supabase db push, then try again.',
+        },
+        { status: 500 }
+      );
+    }
+    return Response.json({ error: message }, { status: 500 });
+  }
 }
