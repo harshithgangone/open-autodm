@@ -6,7 +6,7 @@
   --color-primary-base: #F97316;
   --color-secondary-base: #22C55E;
   --color-danger-base: #EF4444;
-  
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -36,66 +36,66 @@
 }
 
 :root {
-  /* LIGHT MODE - Pure & Bold */
-  --background: #FFFFFF;
-  --foreground: #000000;
-  
+  /* LIGHT — quiet paper console */
+  --background: #FAFAFA;
+  --foreground: #121215;
+
   --card: #FFFFFF;
-  --card-foreground: #000000;
-  
-  --popover: #FAFAFA;
-  --popover-foreground: #000000;
-  
+  --card-foreground: #121215;
+
+  --popover: #FFFFFF;
+  --popover-foreground: #121215;
+
   --primary: #F97316;
   --primary-foreground: #FFFFFF;
-  
-  --secondary: #22C55E;
+
+  --secondary: #16A34A;
   --secondary-foreground: #FFFFFF;
-  
-  --muted: #F5F5F5;
-  --muted-foreground: #525252;
-  
-  --accent: #F5F5F5;
-  --accent-foreground: #000000;
-  
-  --destructive: #EF4444;
+
+  --muted: #F1F1F3;
+  --muted-foreground: #63636C;
+
+  --accent: #F1F1F3;
+  --accent-foreground: #121215;
+
+  --destructive: #DC2626;
   --destructive-foreground: #FFFFFF;
-  
-  --border: #E5E5E5;
-  --input: #E5E5E5;
+
+  --border: #E7E7EA;
+  --input: #E7E7EA;
   --ring: #F97316;
-  
-  --radius: 0.75rem;
+
+  --radius: 0.625rem;
 }
 
 .dark {
-  /* DARK MODE - Pure & Bold */
-  --background: #000000;
-  --foreground: #FFFFFF;
-  
-  --card: #0A0A0A;
-  --card-foreground: #FFFFFF;
-  
-  --popover: #171717;
-  --popover-foreground: #FFFFFF;
-  
+  /* DARK — near-black console, hairline borders */
+  --background: #0A0A0B;
+  --foreground: #F3F3F5;
+
+  --card: #101013;
+  --card-foreground: #F3F3F5;
+
+  --popover: #16161A;
+  --popover-foreground: #F3F3F5;
+
   --primary: #F97316;
   --primary-foreground: #FFFFFF;
-  
+
   --secondary: #22C55E;
-  --secondary-foreground: #FFFFFF;
-  
-  --muted: #171717;
-  --muted-foreground: #A3A3A3;
-  
-  --accent: #171717;
-  --accent-foreground: #FFFFFF;
-  
+  --secondary-foreground: #0A0A0B;
+
+  --muted: #17171B;
+  --muted-foreground: #9C9CA6;
+
+  --accent: #17171B;
+  --accent-foreground: #F3F3F5;
+
   --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
-  
-  --border: #262626;
-  --input: #262626;
+
+  --border: #232329;
+  --input: #232329;
   --ring: #F97316;
 }
 
@@ -106,7 +106,26 @@
   body {
     background-color: var(--background);
     color: var(--foreground);
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
   }
+}
+
+/* The one warm thread — the Instagram sunset, used thin and sparingly */
+.ig-thread {
+  background-image: linear-gradient(90deg, #f09433, #e6683c, #dc2743, #bc1888);
+}
+.ig-ring {
+  background-image: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #bc1888);
+}
+
+/* Section micro-label — the console's structural voice */
+.micro-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
 }
 
 @keyframes shimmer {
@@ -125,4 +144,12 @@
 }
 .scrollbar-none::-webkit-scrollbar {
   display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

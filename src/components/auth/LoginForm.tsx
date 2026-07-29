@@ -8,12 +8,8 @@ import { LogoMark } from "@/components/ui/Logo";
 
 /**
  * Sign-in only — there is deliberately NO registration flow.
- *
- * Accounts are created by the instance owner in the Supabase dashboard:
- * Authentication → Users → Add user (with "Auto Confirm User" checked).
- * Pair this with disabling public signups in Supabase
- * (Authentication → Sign In / Providers → "Allow new users to sign up" OFF)
- * so the API can't be used to self-register either.
+ * Accounts are created by the instance owner in the Supabase dashboard
+ * (Authentication → Users → Add user), with public signups disabled.
  */
 export function LoginForm() {
     const [email, setEmail] = useState("");
@@ -35,7 +31,7 @@ export function LoginForm() {
             }
             window.location.href = "/dashboard";
         } catch {
-            setError("Something went wrong. Please try again.");
+            setError("Something went wrong. Try again.");
         } finally {
             setIsLoading(false);
         }
@@ -43,71 +39,67 @@ export function LoginForm() {
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
-            className="w-full max-w-md p-8 sm:p-12 bg-white dark:bg-[#0A0A0A] border border-border rounded-[2rem] shadow-2xl shadow-black/10 dark:shadow-black/50 relative overflow-hidden group"
+            transition={{ duration: 0.5, ease: "easeOut", delay: 0.15 }}
+            className="w-full max-w-sm bg-card border border-border rounded-xl shadow-xl shadow-black/5 dark:shadow-black/40 overflow-hidden"
         >
-            {/* Decorative glow */}
-            <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-primary/5 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 pointer-events-none transition-all duration-700 ease-in-out group-hover:bg-primary/10"></div>
+            {/* The warm thread */}
+            <div className="h-[2px] w-full ig-thread" />
 
-            <div className="flex flex-col mb-8 text-left relative z-10">
-                <motion.div
-                    initial={{ rotate: -10 }}
-                    animate={{ rotate: 0 }}
-                    transition={{ type: "spring", stiffness: 200, damping: 10 }}
-                >
-                    <LogoMark className="w-11 h-11 mb-8" />
-                </motion.div>
-                <h1 className="text-4xl font-heading font-bold tracking-tight text-foreground mb-3">
-                    Welcome back
-                </h1>
-                <p className="text-muted-foreground text-[15px] font-medium tracking-tight">
-                    Sign in to your self-hosted automation hub.
-                </p>
-            </div>
+            <div className="p-8">
+                <div className="flex flex-col mb-7">
+                    <LogoMark className="w-9 h-9 mb-5" />
+                    <h1 className="text-lg font-heading font-semibold tracking-tight text-foreground mb-1">
+                        Welcome back
+                    </h1>
+                    <p className="text-[13px] text-muted-foreground">
+                        Sign in to your automation console.
+                    </p>
+                </div>
 
-            <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col space-y-4 relative z-10">
-                {error && <p className="text-sm text-destructive font-medium">{error}</p>}
+                <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col space-y-3">
+                    {error && <p className="text-[12.5px] text-destructive font-medium">{error}</p>}
 
-                <input
-                    type="email"
-                    required
-                    autoComplete="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    className="w-full px-4 py-3.5 text-sm bg-background border border-border rounded-2xl outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all font-medium"
-                />
-                <input
-                    type="password"
-                    required
-                    autoComplete="current-password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Your password"
-                    className="w-full px-4 py-3.5 text-sm bg-background border border-border rounded-2xl outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all font-medium"
-                />
+                    <div>
+                        <label className="micro-label block mb-1">Email</label>
+                        <input
+                            type="email"
+                            required
+                            autoComplete="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="you@example.com"
+                            className="w-full h-10 px-3 text-[13.5px] bg-background border border-border rounded-lg outline-none focus:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring/30 transition-colors"
+                        />
+                    </div>
+                    <div>
+                        <label className="micro-label block mb-1">Password</label>
+                        <input
+                            type="password"
+                            required
+                            autoComplete="current-password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="••••••••••••"
+                            className="w-full h-10 px-3 text-[13.5px] bg-background border border-border rounded-lg outline-none focus:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring/30 transition-colors"
+                        />
+                    </div>
 
-                <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="relative overflow-hidden flex items-center justify-center w-full px-5 py-4 space-x-3 text-sm font-semibold transition-all duration-300 bg-foreground dark:bg-white text-background dark:text-black rounded-2xl hover:scale-[1.02] shadow-xl shadow-foreground/10 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
-                >
-                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-[18px] h-[18px]" />}
-                    <span>{isLoading ? "Signing in..." : "Sign In"}</span>
-                </button>
-            </form>
+                    <button
+                        type="submit"
+                        disabled={isLoading}
+                        className="flex items-center justify-center gap-2 w-full h-10 mt-1 text-[13.5px] font-semibold bg-foreground text-background rounded-lg hover:opacity-90 disabled:opacity-60 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+                    >
+                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
+                        {isLoading ? "Signing in…" : "Sign in"}
+                    </button>
+                </form>
 
-            <div className="mt-8 text-center relative z-10">
-                <p className="text-[12px] text-muted-foreground leading-relaxed font-medium">
-                    No account? Access is invite-only — the instance owner creates users in the
-                    Supabase dashboard <span className="text-foreground/70 font-semibold">(Authentication → Users → Add user)</span>.
-                </p>
-                <div className="mt-6 flex items-center justify-center space-x-2">
-                    <div className="w-2 h-2 rounded-full bg-secondary animate-pulse"></div>
-                    <p className="text-[12px] font-semibold text-foreground tracking-tight">
-                        100% open source · Your data stays on your infrastructure.
+                <div className="mt-6 pt-5 border-t border-border">
+                    <p className="text-[11.5px] text-muted-foreground leading-relaxed">
+                        No account? Access is invite-only — the instance owner creates users in the
+                        Supabase dashboard <span className="text-foreground/70 font-medium">(Authentication → Users → Add user)</span>.
                     </p>
                 </div>
             </div>

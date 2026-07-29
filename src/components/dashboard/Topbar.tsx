@@ -1,35 +1,31 @@
 "use client";
 
-import { Menu, Zap } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { Menu } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
+const TITLES: Record<string, string> = {
+    "/dashboard": "Dashboard",
+    "/automations": "Automations",
+    "/settings": "Settings",
+    "/setup": "Setup Wizard",
+};
+
 export function Topbar() {
+    const pathname = usePathname();
+    const title = Object.entries(TITLES).find(([path]) => pathname.startsWith(path))?.[1] ?? "open-autoDM";
+
     return (
-        <header className="sticky top-0 z-40 flex w-full items-center justify-between bg-background/80 backdrop-blur-md border-b border-border/40 p-4 lg:px-8">
-
-            {/* Mobile Menu Toggle - Hidden on Desktop */}
-            <div className="flex items-center lg:hidden">
-                <button className="p-2 -ml-2 rounded-xl text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors">
-                    <Menu className="w-5 h-5" />
-                    <span className="sr-only">Toggle Menu</span>
+        <header className="sticky top-0 z-40 flex h-14 w-full items-center justify-between bg-background/85 backdrop-blur-md border-b border-border px-4 lg:px-8">
+            <div className="flex items-center gap-3">
+                <button className="lg:hidden p-1.5 -ml-1.5 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <Menu className="w-4 h-4" />
+                    <span className="sr-only">Toggle menu</span>
                 </button>
+                <h1 className="text-[15px] font-heading font-semibold tracking-tight text-foreground">{title}</h1>
             </div>
 
-            {/* Page Context Title */}
-            <div className="flex-1 flex items-center lg:pl-0 pl-4">
-                <h1 className="text-xl font-heading font-bold tracking-tight text-foreground hidden sm:block">
-                    Automation Hub
-                </h1>
-            </div>
-
-            {/* Right Actions */}
-            <div className="flex items-center space-x-4">
-                <ThemeToggle />
-
-                <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#f09433] via-[#e6683c] to-[#bc1888] flex items-center justify-center shadow-md ring-2 ring-background">
-                    <Zap className="w-4 h-4 text-white fill-current" />
-                </div>
-            </div>
+            <ThemeToggle />
         </header>
     );
 }

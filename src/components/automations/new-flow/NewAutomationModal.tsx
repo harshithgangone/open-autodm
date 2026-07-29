@@ -1,9 +1,8 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ArrowLeft, Check, AlertTriangle } from "lucide-react";
-import { useState, useEffect, useCallback, useRef } from "react";
-import { cn } from "@/lib/utils";
+import { X, ArrowLeft, Check, AlertTriangle, Loader2 } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
 
 import { SelectTypeStep } from "./steps/SelectTypeStep";
 import { SelectPostStep } from "./steps/SelectPostStep";
@@ -40,18 +39,15 @@ export type AutomationFlowData = {
     name: string;
     type: string | null;
     postId: string | null;
-    // UI-only display fields (not sent to API)
     postThumbnailUrl?: string | null;
     postCaption?: string;
     keywords: string[];
-    keywordsAnyMode: boolean; // true = any comment, false = specific keywords
+    keywordsAnyMode: boolean;
     customReplies: string[];
-    // DM flow
     isAutoDmEnabled: boolean;
     dmOpeningMessageEnabled: boolean;
     dmOpeningMessage: string;
     dmOpeningMessageButtonTitle: string;
-    // Ask-to-follow
     askToFollowEnabled: boolean;
     askToFollowMessage: string;
     askToFollowVisitProfileButton: string;
@@ -65,6 +61,12 @@ const DB_TYPE_TO_FLOW: Record<string, string> = {
     story_reply: "story-reply",
 };
 
+const DEFAULT_NAMES: Record<string, string> = {
+    "comment-dm": "Comment funnel",
+    "dm-reply": "DM keyword reply",
+    "story-reply": "Story reply funnel",
+};
+
 const defaultFlowData = (): AutomationFlowData => ({
     name: "New automation",
     type: null,
@@ -72,14 +74,14 @@ const defaultFlowData = (): AutomationFlowData => ({
     postThumbnailUrl: null,
     postCaption: "",
     keywords: [],
-    keywordsAnyMode: true,
-    customReplies: ["Sent! 🚀", "Check your DMs 📬", "Got it, check your inbox! ✉️", "Sending it over now ✨"],
+    keywordsAnyMode: false,
+    customReplies: ["Sent! 🚀", "Check your DMs 📬", "Got it, check your inbox! ✉️"],
     isAutoDmEnabled: true,
     dmOpeningMessageEnabled: true,
     dmOpeningMessage: "Hey there!\n\nI'm so happy you're here, thank you so much for your interest 🥰\n\nClick below and I'll send you the link in just a sec ✨",
     dmOpeningMessageButtonTitle: "Send me the link",
     askToFollowEnabled: false,
-    askToFollowMessage: "Hey! It seems you're not following me yet 😊\n\nWould love it if you could check out my profile and hit follow!",
+    askToFollowMessage: "Hey! It seems you're not following me yet 😊",
     askToFollowVisitProfileButton: "Visit Profile",
     askToFollowConfirmButton: "I'm following ✅",
     dmResponses: [],
@@ -128,7 +130,6 @@ export function NewAutomationModal({ isOpen, onClose, editAutomation }: NewAutom
 
     const isDirty = JSON.stringify(flowData) !== savedSnapshot;
 
-    // Reset / pre-fill on open
     useEffect(() => {
         if (isOpen) {
             setActivateError(null);
@@ -151,13 +152,23 @@ export function NewAutomationModal({ isOpen, onClose, editAutomation }: NewAutom
     const updateData = useCallback((patch: Partial<AutomationFlowData>) =>
         setFlowData(prev => ({ ...prev, ...patch })), []);
 
+    const handleTypeSelect = (type: string) => {
+        const name = flowData.name === "New automation" ? (DEFAULT_NAMES[type] ?? flowData.name) : flowData.name;
+        if (type === "comment-dm") {
+            updateData({ type, name });
+            setStep(1);
+        } else {
+            // DM / story triggers have no post target — straight to configure
+            updateData({ type, name, postId: "all", postThumbnailUrl: null, postCaption: "" });
+            setStep(2);
+        }
+    };
+
     const handleBack = () => setStep(s => {
-        // Non-comment types skip the post-picker, so back from configure → type select
         if (s === 2 && flowData.type !== "comment-dm") return 0;
         return Math.max(s - 1, 0);
     });
 
-    // Attempt close — show confirmation if dirty
     const handleClose = () => {
         if (isDirty && step >= 2) {
             setShowConfirm(true);
@@ -173,19 +184,21 @@ export function NewAutomationModal({ isOpen, onClose, editAutomation }: NewAutom
             "story-reply": "story_reply",
         };
         const dbType = typeMap[flowData.type ?? ""] ?? "comment_dm";
+        const isComment = dbType === "comment_dm";
         return {
             name: flowData.name,
             type: dbType,
             isActive: isActive ?? true,
-            postId: flowData.postId === "all" ? null : flowData.postId,
-            postThumbnailUrl: flowData.postThumbnailUrl ?? null,
-            postCaption: flowData.postCaption ?? null,
+            postId: !isComment || flowData.postId === "all" ? null : flowData.postId,
+            postThumbnailUrl: isComment ? flowData.postThumbnailUrl ?? null : null,
+            postCaption: isComment ? flowData.postCaption ?? null : null,
             keywords: !flowData.keywordsAnyMode && flowData.keywords.length > 0 ? flowData.keywords : null,
-            commentReplyOptions: flowData.customReplies,
+            // Public comment replies only exist for comment automations
+            commentReplyOptions: isComment ? flowData.customReplies : [],
             dmOpeningMessageEnabled: flowData.isAutoDmEnabled && flowData.dmOpeningMessageEnabled,
             dmOpeningMessage: flowData.dmOpeningMessage,
             dmOpeningMessageButtonTitle: flowData.dmOpeningMessageButtonTitle || null,
-            dmOpeningMessageButtonLink: null, // Quick reply — no link
+            dmOpeningMessageButtonLink: null,
             askToFollowEnabled: flowData.askToFollowEnabled,
             askToFollowMessage: flowData.askToFollowMessage,
             askToFollowVisitProfileButton: flowData.askToFollowVisitProfileButton,
@@ -251,43 +264,41 @@ export function NewAutomationModal({ isOpen, onClose, editAutomation }: NewAutom
     const isActivating = pendingAction === 'activate' && (createMutation.isPending || updateMutation.isPending);
     const isPending = isSaving || isActivating;
 
-    const stepTitle = step === 0 ? "New Automation"
-        : step === 1 ? "Select Post"
+    const stepTitle = step === 0 ? "New automation"
+        : step === 1 ? "Choose a post"
         : isEditMode ? `Edit — ${flowData.name}` : flowData.name || "Configure";
-
-    // Determine whether the configure step's "Next/Activate" button is enabled
-    const configureValid = flowData.keywords.length > 0 || !!(flowData.keywords.length === 0 && !flowData.type?.includes("comment"));
 
     return (
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-3">
                     {/* Backdrop */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="absolute inset-0 bg-background/70 backdrop-blur-md"
+                        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
                         onClick={handleClose}
                     />
 
                     {/* Modal */}
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.97, y: 16 }}
+                        initial={{ opacity: 0, scale: 0.98, y: 12 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.97, y: 16 }}
-                        transition={{ type: "spring", damping: 28, stiffness: 280 }}
-                        className="relative w-full h-full max-w-[96vw] lg:max-w-7xl max-h-[92vh] bg-background border border-border rounded-3xl shadow-2xl flex flex-col overflow-hidden z-10"
+                        exit={{ opacity: 0, scale: 0.98, y: 12 }}
+                        transition={{ type: "spring", damping: 30, stiffness: 300 }}
+                        className="relative w-full h-full max-w-[96vw] lg:max-w-6xl max-h-[92vh] bg-background border border-border rounded-xl shadow-2xl flex flex-col overflow-hidden z-10"
                     >
-                        {/* Header */}
-                        <div className="h-[56px] shrink-0 border-b border-border flex items-center justify-between px-5 gap-4 bg-muted/20">
-                            <div className="flex items-center gap-3 min-w-0">
-                                <span className="font-bold text-sm text-foreground truncate">{stepTitle}</span>
-                            </div>
+                        {/* The warm thread — top edge */}
+                        <div className="h-[2px] w-full ig-thread shrink-0" />
 
-                            <div className="flex items-center gap-2 shrink-0">
+                        {/* Header */}
+                        <div className="h-12 shrink-0 border-b border-border flex items-center justify-between px-4 gap-3">
+                            <span className="text-[13px] font-semibold text-foreground truncate">{stepTitle}</span>
+
+                            <div className="flex items-center gap-1.5 shrink-0">
                                 {step > 0 && (
-                                    <button onClick={handleBack} className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted px-3 py-1.5 rounded-xl transition-colors">
+                                    <button onClick={handleBack} className="inline-flex items-center gap-1 h-8 px-2.5 text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors">
                                         <ArrowLeft className="w-3.5 h-3.5" /> Back
                                     </button>
                                 )}
@@ -295,35 +306,31 @@ export function NewAutomationModal({ isOpen, onClose, editAutomation }: NewAutom
                                 {step === 2 && (
                                     <>
                                         {activateError && (
-                                            <span className="text-xs text-destructive font-medium max-w-[260px] break-words leading-snug">{activateError}</span>
+                                            <span className="text-[12px] text-destructive font-medium max-w-[240px] truncate flex items-center gap-1">
+                                                <AlertTriangle className="w-3 h-3 shrink-0" />{activateError}
+                                            </span>
                                         )}
                                         <button
                                             disabled={isPending}
                                             onClick={() => handleSave(false)}
-                                            className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground bg-muted/60 hover:bg-muted border border-border disabled:opacity-50 px-4 py-1.5 rounded-xl transition-all"
+                                            className="inline-flex items-center gap-1.5 h-8 px-3 text-[13px] font-medium text-foreground border border-border hover:bg-muted disabled:opacity-50 rounded-lg transition-colors"
                                         >
-                                            {isSaving ? (
-                                                <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-                                            ) : null}
-                                            {isSaving ? "Saving..." : "Save Changes"}
+                                            {isSaving && <Loader2 className="w-3 h-3 animate-spin" />}
+                                            {isSaving ? "Saving…" : "Save"}
                                         </button>
                                         <button
                                             disabled={isPending || (!isEditMode && !firstAccountId)}
                                             onClick={() => handleSave(true)}
-                                            className="inline-flex items-center gap-1.5 text-sm font-bold bg-emerald-500 text-white hover:bg-emerald-600 disabled:opacity-60 disabled:cursor-not-allowed px-4 py-1.5 rounded-xl shadow-sm transition-all"
+                                            className="inline-flex items-center gap-1.5 h-8 px-3 text-[13px] font-semibold bg-foreground text-background hover:opacity-90 disabled:opacity-50 rounded-lg transition-opacity"
                                         >
-                                            {isActivating ? (
-                                                <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-                                            ) : (
-                                                <Check className="w-3.5 h-3.5" />
-                                            )}
-                                            {isActivating ? "Activating..." : "Activate"}
+                                            {isActivating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                                            {isActivating ? "Activating…" : "Activate"}
                                         </button>
                                     </>
                                 )}
 
-                                <div className="w-px h-5 bg-border mx-1" />
-                                <button onClick={handleClose} className="p-1.5 hover:bg-muted text-muted-foreground hover:text-foreground rounded-lg transition-colors">
+                                <div className="w-px h-4 bg-border mx-0.5" />
+                                <button onClick={handleClose} className="p-1.5 hover:bg-muted text-muted-foreground hover:text-foreground rounded-md transition-colors">
                                     <X className="w-4 h-4" />
                                 </button>
                             </div>
@@ -334,24 +341,15 @@ export function NewAutomationModal({ isOpen, onClose, editAutomation }: NewAutom
                             <AnimatePresence mode="wait">
                                 <motion.div
                                     key={step}
-                                    initial={{ opacity: 0, x: 10 }}
+                                    initial={{ opacity: 0, x: 8 }}
                                     animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -10 }}
-                                    transition={{ duration: 0.18, ease: "easeOut" }}
+                                    exit={{ opacity: 0, x: -8 }}
+                                    transition={{ duration: 0.15, ease: "easeOut" }}
                                     className="w-full h-full"
                                 >
                                     {step === 0 && (
                                         <SelectTypeStep
-                                            onSelect={(type: string) => {
-                                                if (type === "comment-dm") {
-                                                    updateData({ type });
-                                                    setStep(1);
-                                                } else {
-                                                    // DM / story triggers have no post target — go straight to configure
-                                                    updateData({ type, postId: "all", postThumbnailUrl: null, postCaption: "" });
-                                                    setStep(2);
-                                                }
-                                            }}
+                                            onSelect={handleTypeSelect}
                                             selectedType={flowData.type}
                                         />
                                     )}
@@ -377,42 +375,42 @@ export function NewAutomationModal({ isOpen, onClose, editAutomation }: NewAutom
                             </AnimatePresence>
                         </div>
 
-                        {/* Unsaved-changes confirmation overlay */}
+                        {/* Unsaved-changes confirmation */}
                         <AnimatePresence>
                             {showConfirm && (
                                 <motion.div
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
-                                    className="absolute inset-0 z-20 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+                                    className="absolute inset-0 z-20 flex items-center justify-center bg-background/70 backdrop-blur-sm"
                                 >
                                     <motion.div
-                                        initial={{ scale: 0.95, y: 8 }}
+                                        initial={{ scale: 0.97, y: 6 }}
                                         animate={{ scale: 1, y: 0 }}
-                                        exit={{ scale: 0.95, y: 8 }}
-                                        className="bg-card border border-border rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl"
+                                        exit={{ scale: 0.97, y: 6 }}
+                                        className="bg-card border border-border rounded-xl p-5 max-w-sm w-full mx-4 shadow-xl"
                                     >
                                         <div className="flex items-center gap-3 mb-4">
-                                            <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0">
-                                                <AlertTriangle className="w-5 h-5 text-amber-500" />
+                                            <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
+                                                <AlertTriangle className="w-4 h-4 text-amber-500" />
                                             </div>
                                             <div>
-                                                <p className="font-bold text-foreground">Unsaved changes</p>
-                                                <p className="text-sm text-muted-foreground">Your changes haven't been saved.</p>
+                                                <p className="text-[13.5px] font-semibold text-foreground">Unsaved changes</p>
+                                                <p className="text-[12.5px] text-muted-foreground">Your edits haven&apos;t been saved.</p>
                                             </div>
                                         </div>
-                                        <div className="flex gap-3">
+                                        <div className="flex gap-2">
                                             <button
                                                 onClick={() => setShowConfirm(false)}
-                                                className="flex-1 py-2.5 rounded-xl border border-border text-sm font-semibold hover:bg-muted transition-colors"
+                                                className="flex-1 h-9 rounded-lg border border-border text-[13px] font-medium hover:bg-muted transition-colors"
                                             >
                                                 Keep editing
                                             </button>
                                             <button
                                                 onClick={() => { setShowConfirm(false); onClose(); }}
-                                                className="flex-1 py-2.5 rounded-xl bg-destructive text-white text-sm font-bold hover:bg-destructive/90 transition-colors"
+                                                className="flex-1 h-9 rounded-lg bg-destructive text-white text-[13px] font-semibold hover:bg-destructive/90 transition-colors"
                                             >
-                                                Discard & close
+                                                Discard
                                             </button>
                                         </div>
                                     </motion.div>

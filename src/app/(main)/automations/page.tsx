@@ -38,46 +38,38 @@ export default function AutomationsPage() {
     };
 
     return (
-        <div className="w-full max-w-7xl mx-auto space-y-8 pb-12">
+        <div className="w-full max-w-5xl mx-auto space-y-6 pb-16">
 
-            {/* Header row: Tabs & New Button */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/40 pb-4">
-                <div className="flex bg-muted/30 p-1 rounded-xl border border-border/50">
-                    <button
-                        onClick={() => setActiveTab("automations")}
-                        className={cn(
-                            "px-6 py-2 rounded-lg text-sm font-bold transition-all duration-300",
-                            activeTab === "automations"
-                                ? "bg-card text-foreground shadow-sm ring-1 ring-border/50"
-                                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                        )}
-                    >
-                        Automations
-                    </button>
-                    <button
-                        onClick={() => setActiveTab("contacts")}
-                        className={cn(
-                            "px-6 py-2 rounded-lg text-sm font-bold transition-all duration-300",
-                            activeTab === "contacts"
-                                ? "bg-card text-foreground shadow-sm ring-1 ring-border/50"
-                                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                        )}
-                    >
-                        Contacts
-                    </button>
+            {/* Tabs + new */}
+            <div className="flex items-center justify-between gap-4">
+                <div className="inline-flex items-center bg-muted rounded-lg p-0.5">
+                    {(["automations", "contacts"] as const).map((tab) => (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            className={cn(
+                                "h-8 px-3.5 rounded-[7px] text-[13px] font-medium capitalize transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+                                activeTab === tab
+                                    ? "bg-card text-foreground shadow-sm"
+                                    : "text-muted-foreground hover:text-foreground"
+                            )}
+                        >
+                            {tab}
+                        </button>
+                    ))}
                 </div>
 
                 <button
                     onClick={() => { setEditingAutomation(null); setIsModalOpen(true); }}
-                    className="inline-flex items-center justify-center space-x-2 bg-[#F97316] text-white hover:bg-[#ea580c] px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-[#F97316]/20 transition-transform active:scale-95"
+                    className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg bg-foreground text-background text-[13px] font-semibold hover:opacity-90 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
                 >
-                    <Plus className="w-4 h-4" />
-                    <span>New Automation</span>
+                    <Plus className="w-3.5 h-3.5" />
+                    New automation
                 </button>
             </div>
 
-            {/* Active Content Area */}
-            <div className="min-h-[500px]">
+            {/* Content */}
+            <div className="min-h-[420px]">
                 {activeTab === "automations" ? (
                     <AutomationsList
                         automations={automations ?? []}
@@ -92,16 +84,14 @@ export default function AutomationsPage() {
                 )}
             </div>
 
-            {/* Modal (create + edit) */}
             <NewAutomationModal
                 isOpen={isModalOpen}
                 onClose={handleModalClose}
                 editAutomation={editingAutomation}
             />
 
-            {/* Debug panel — only visible when NEXT_PUBLIC_DEBUG=true */}
+            {/* Debug panel — visible only when NEXT_PUBLIC_DEBUG=true */}
             <AutomationDebugPanel />
-
         </div>
     );
 }

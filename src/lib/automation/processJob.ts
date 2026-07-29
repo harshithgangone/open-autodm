@@ -26,7 +26,7 @@ import { createLogger } from '@/lib/logger';
 import { debugLog } from '@/lib/debugLog';
 import { decrypt } from '@/lib/crypto';
 import { getEnv } from '@/lib/env';
-import type { AutoDmJobPayload, AutomationRow, InstagramAccountRow } from '@/lib/types';
+import type { AutoDmJobPayload, AutomationRow, InstagramAccountRow, DMResponse } from '@/lib/types';
 import {
   sendInstagramDm,
   sendInstagramLinkButtonDm,
@@ -49,6 +49,81 @@ function shouldFallBackToInlineLink(err: unknown): err is MetaApiError {
   return err instanceof MetaApiError && !(err instanceof AccountPausedMetaError);
 }
 import { renderTemplate } from '@/lib/automation/personalize';
+
+/** Sends a single configured response (text w/ optional link button, or card). */
+async function sendOneResponse(
+  igAccountIgsid: string,
+  recipient: DmRecipient,
+  audienceId: string,
+  response: DMResponse,
+  username: string | null | undefined,
+  accessToken: string
+): Promise<void> {
+  if (response.type === 'card') {
+    const cardImageUrl = response.cardImage?.startsWith('http') ? response.cardImage : undefined;
+    await sendInstagramCardDm(igAccountIgsid, audienceId, accessToken, {
+      title: response.cardTitle ?? response.content,
+      ...(cardImageUrl !== undefined ? { imageUrl: cardImageUrl } : {}),
+      ...(response.cardSubtitle !== undefined ? { subtitle: response.cardSubtitle } : {}),
+      ...(response.cardButtons !== undefined
+        ? { buttons: response.cardButtons.map((b) => ({ title: b.title, url: b.link })) }
+        : {}),
+    });
+    return;
+  }
+
+  const messageText = renderTemplate(response.content.trim(), username);
+  const link = response.buttonLink?.trim();
+  if (link) {
+    const buttonTitle = response.buttonTitle?.trim() || 'Open link';
+    try {
+      await sendInstagramLinkButtonDm(igAccountIgsid, recipient, messageText, buttonTitle, link, accessToken);
+    } catch (buttonErr) {
+      if (!shouldFallBackToInlineLink(buttonErr)) throw buttonErr;
+      await sendInstagramDm(igAccountIgsid, recipient, `${messageText}\n\n${buttonTitle}: ${link}`, accessToken);
+    }
+  } else {
+    await sendInstagramDm(igAccountIgsid, recipient, messageText, accessToken);
+  }
+}
+
+/**
+ * Best-effort sequential delivery of configured responses for the 1-step flow
+ * (no reveal button). Per-response failures are logged and skipped rather than
+ * thrown — the opening DM already went out and is dedup-recorded, so a retry
+ * could never resend it; losing one response beats losing the whole flow.
+ */
+async function deliverResponsesBestEffort(
+  payload: AutoDmJobPayload,
+  responses: DMResponse[],
+  accessToken: string
+): Promise<number> {
+  let sent = 0;
+  for (const [idx, response] of responses.entries()) {
+    if (!response.content?.trim() && response.type !== 'card') continue;
+    try {
+      await sendOneResponse(
+        payload.igAccountIgsid,
+        { id: payload.triggerUserId },
+        payload.triggerUserId,
+        response,
+        payload.triggerUsername,
+        accessToken
+      );
+      sent += 1;
+      debugLog('worker', 'info', 'responses_send', 'ok', `Response ${idx + 1}/${responses.length} sent (1-step flow)`, {
+        responseIndex: idx + 1,
+        type: response.type,
+      });
+    } catch (err) {
+      if (err instanceof AccountPausedMetaError) throw err; // circuit breaker must still open
+      debugLog('worker', 'warn', 'responses_send', 'error',
+        `Response ${idx + 1}/${responses.length} failed (1-step flow, skipped): ${err instanceof Error ? err.message : String(err)}`,
+        { responseIndex: idx + 1 });
+    }
+  }
+  return sent;
+}
 
 const logger = createLogger('worker');
 
@@ -251,8 +326,54 @@ export async function processAutoDmJob(payload: AutoDmJobPayload, attempt: numbe
 
   // ── 8: Compose + send the opening DM ─────────────────────────────────────
   if (!automation.dm_opening_message_enabled || !automation.dm_opening_message.trim()) {
-    debugLog('worker', 'info', 'opening_dm', 'skipped', 'Opening DM disabled or empty — nothing to send', {});
-    await markJobStatus(db, payload, 'skipped', 'DM disabled');
+    // Opening message is off — the FIRST response becomes the initial DM.
+    const responses = automation.dm_responses ?? [];
+    const firstResponse = responses.find((r) => r.content?.trim() || r.type === 'card');
+    if (!firstResponse) {
+      debugLog('worker', 'info', 'opening_dm', 'skipped', 'Opening DM disabled and no responses configured — nothing to send', {});
+      await markJobStatus(db, payload, 'skipped', 'DM disabled');
+      return;
+    }
+
+    // Comment triggers deliver the initial contact via private reply.
+    const directRecipient: DmRecipient =
+      payload.triggerType === 'comment' && payload.triggerEventId && firstResponse.type !== 'card'
+        ? { commentId: payload.triggerEventId }
+        : { id: payload.triggerUserId };
+
+    debugLog('worker', 'info', 'opening_dm', 'processing', 'Opening message off — sending first response directly', {
+      recipientId: payload.triggerUserId,
+      viaPrivateReply: 'commentId' in directRecipient,
+    });
+
+    try {
+      await sendOneResponse(
+        payload.igAccountIgsid,
+        directRecipient,
+        payload.triggerUserId,
+        firstResponse,
+        payload.triggerUsername,
+        accessToken
+      );
+    } catch (err) {
+      await markJobStatus(db, payload, 'failed', err instanceof Error ? err.message : String(err));
+      throw err;
+    }
+
+    const { error: directLogError } = await db.from('dm_sent_log').insert({
+      instagram_account_id: payload.instagramAccountId,
+      automation_id: payload.automationId,
+      trigger_user_id: payload.triggerUserId,
+      trigger_event_id: payload.triggerEventId,
+    });
+    if (directLogError && directLogError.code !== '23505') {
+      logger.error({ err: directLogError }, 'Failed to insert dm_sent_log entry (direct response)');
+    }
+    await markJobStatus(db, payload, 'sent', null, new Date());
+    await db.rpc('increment_automation_dms_sent', { automation_id: payload.automationId });
+    debugLog('worker', 'info', 'job_completed', 'ok', `Direct response delivered to ${payload.triggerUserId}`, {
+      automationId: payload.automationId,
+    });
     return;
   }
 
@@ -380,6 +501,16 @@ export async function processAutoDmJob(payload: AutoDmJobPayload, attempt: numbe
     automation_id: payload.automationId,
   });
   if (counterError) logger.warn({ err: counterError }, 'Failed to increment DM counter');
+
+  // 1-step flow: no reveal button (or session creation degraded) → there is
+  // no tap coming, so deliver the configured responses right away.
+  if (!sessionId && automation.dm_responses?.length) {
+    debugLog('worker', 'info', 'responses_send', 'processing',
+      `No reveal button — delivering ${automation.dm_responses.length} response(s) immediately`, {
+        responseCount: automation.dm_responses.length,
+      });
+    await deliverResponsesBestEffort(payload, automation.dm_responses, accessToken);
+  }
 
   // Contacts: DM/story webhooks don't carry a username — enrich it (and the
   // follow flag) from the profile API now that they've messaged us.

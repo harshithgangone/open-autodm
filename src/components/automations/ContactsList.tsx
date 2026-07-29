@@ -67,7 +67,7 @@ export function ContactsList() {
         return (
             <div className="flex flex-col space-y-4">
                 {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-20 rounded-2xl bg-muted/30 border border-border/40 animate-pulse" />
+                    <div key={i} className="h-20 rounded-xl bg-muted/30 border border-border/40 animate-pulse" />
                 ))}
             </div>
         );
@@ -75,8 +75,8 @@ export function ContactsList() {
 
     if (!contacts || contacts.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center p-12 text-center border border-border/50 border-dashed rounded-3xl bg-muted/10">
-                <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
+            <div className="flex flex-col items-center justify-center p-12 text-center border border-border border-dashed rounded-xl">
+                <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center mb-6">
                     <Users className="w-8 h-8 text-primary" />
                 </div>
                 <h3 className="text-xl font-heading font-bold mb-2 text-foreground">No Contacts Yet</h3>
@@ -91,7 +91,7 @@ export function ContactsList() {
     return (
         <div className="flex flex-col space-y-4 w-full animate-in fade-in duration-500">
             {/* Toolbar */}
-            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-card/40 backdrop-blur-sm p-4 rounded-2xl border border-border/50">
+            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-card p-3 rounded-xl border border-border">
                 <div className="relative w-full sm:max-w-xs">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <input
@@ -117,16 +117,16 @@ export function ContactsList() {
             </div>
 
             {/* Table */}
-            <div className="w-full overflow-x-auto bg-card/60 backdrop-blur-sm border border-border/50 rounded-2xl shadow-sm">
+            <div className="w-full overflow-x-auto bg-card border border-border rounded-xl">
                 <table className="w-full text-left text-sm whitespace-nowrap">
                     <thead className="bg-muted/30 text-muted-foreground uppercase tracking-widest text-[10px] font-bold border-b border-border/50">
                         <tr>
-                            <th className="px-6 py-4">User</th>
-                            <th className="px-6 py-4">Relationship</th>
-                            <th className="px-6 py-4">Captured Via</th>
-                            <th className="px-6 py-4">Automation</th>
-                            <th className="px-6 py-4">Interactions</th>
-                            <th className="px-6 py-4">Last Active</th>
+                            <th className="px-5 py-3">User</th>
+                            <th className="px-5 py-3">Relationship</th>
+                            <th className="px-5 py-3">Captured Via</th>
+                            <th className="px-5 py-3">Automation</th>
+                            <th className="px-5 py-3">Interactions</th>
+                            <th className="px-5 py-3">Last Active</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-border/30">
@@ -144,10 +144,10 @@ export function ContactsList() {
                                     transition={{ delay: Math.min(i * 0.04, 0.4) }}
                                     className="group hover:bg-muted/30 transition-colors"
                                 >
-                                    <td className="px-6 py-4">
+                                    <td className="px-5 py-3">
                                         <div className="flex items-center space-x-3">
-                                            <div className={cn("w-10 h-10 rounded-full bg-gradient-to-tr flex items-center justify-center shrink-0", avatarGradient(contact.audience_ig_user_id))}>
-                                                <span className="text-white font-bold text-sm tracking-wider">{initial}</span>
+                                            <div className={cn("w-8 h-8 rounded-full bg-gradient-to-tr flex items-center justify-center shrink-0", avatarGradient(contact.audience_ig_user_id))}>
+                                                <span className="text-white font-bold text-[11px] tracking-wider">{initial}</span>
                                             </div>
                                             <div className="flex flex-col">
                                                 <span className="font-bold text-foreground group-hover:text-primary transition-colors">{display}</span>
@@ -155,8 +155,8 @@ export function ContactsList() {
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4">{relationshipBadge(contact)}</td>
-                                    <td className="px-6 py-4">
+                                    <td className="px-5 py-3">{relationshipBadge(contact)}</td>
+                                    <td className="px-5 py-3">
                                         {trigger ? (
                                             <span className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border", trigger.className)}>
                                                 <TriggerIcon className="w-3 h-3" />
@@ -166,13 +166,13 @@ export function ContactsList() {
                                             <span className="text-muted-foreground text-xs">—</span>
                                         )}
                                     </td>
-                                    <td className="px-6 py-4 font-medium text-foreground/80 max-w-[220px] truncate">
+                                    <td className="px-5 py-3 font-medium text-foreground/80 max-w-[220px] truncate">
                                         {contact.automations?.name ?? "—"}
                                     </td>
-                                    <td className="px-6 py-4">
+                                    <td className="px-5 py-3">
                                         <span className="font-bold font-heading">{contact.total_triggers}</span>
                                     </td>
-                                    <td className="px-6 py-4 text-muted-foreground">{formatDate(contact.last_interaction_at)}</td>
+                                    <td className="px-5 py-3 text-muted-foreground">{formatDate(contact.last_interaction_at)}</td>
                                 </motion.tr>
                             );
                         })}
