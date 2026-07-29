@@ -13,6 +13,9 @@ never touches anyone else's servers.
 
 `Next.js (one deployment)` · `Supabase (DB + auth + queue + cron)` · `Vercel or Cloudflare`
 
+**⭐ Star this repo now** — it takes 2 seconds, helps other creators find a free alternative to
+$25/month tools, and new features land here regularly. **Watch** the repo to catch them.
+
 </div>
 
 ---
@@ -127,12 +130,45 @@ and a troubleshooting table for every failure mode we've ever hit).
 - Every API route authenticates the Supabase JWT; ownership is checked in SQL on every query.
 - Row Level Security on every table, service-role isolation for engine tables.
 
+## 🤝 Contributing
+
+Feature ideas and pull requests are very welcome — open an issue to discuss bigger changes
+first, then send a PR. **More features are actively being added; watch the repo to keep up.**
+If you build something cool on top of this, share it in an issue so others can find it.
+
+## ☕ Support this project
+
+open-autoDM is free forever and saves you a real monthly subscription. If it saved you money
+or a weekend of building, you can fuel the next feature:
+
+<a href="https://buymeacoffee.com/buildwharsha" target="_blank"><img src="https://img.shields.io/badge/☕_Buy_me_a_coffee-support_the_project-F97316?style=for-the-badge" alt="Buy me a coffee" /></a>
+
+Starring the repo is free and helps just as much. ⭐
+
 ## 📄 License
 
-MIT — do whatever you want, no attribution required.
+MIT — use it, modify it, self-host it for yourself or your clients, commercially or not.
+See [LICENSE](LICENSE).
+
+## ⚠️ Disclaimer
+
+- This software is provided **"as is", without warranty of any kind** — see the LICENSE. The
+  author is **not liable** for anything that happens through your use of it, including (but not
+  limited to) actions Meta or Instagram takes on your account or app.
+- open-autoDM talks to Instagram exclusively through **Meta's official APIs** using **your own**
+  Meta developer app and credentials. It never scrapes, never automates a browser, and never
+  asks for your Instagram password.
+- Built-in safety rails (conservative rate limits, humanized delays, dedup, circuit breaker)
+  are designed to keep you inside Meta's published policies — but **you** are responsible for
+  how you use automation and for your own compliance with Instagram's Terms of Use and Meta's
+  Platform Policies.
+- This project is not affiliated with, endorsed by, or sponsored by Meta, Instagram, or any
+  automation vendor mentioned for comparison.
 
 ---
 
-*open-autoDM automates your own Instagram account through Meta's official APIs, within Meta's
-published rate limits and policies. You are responsible for your own account's compliance with
-Instagram's Terms of Use.*
+<div align="center">
+
+Built with ❤️ by <a href="https://www.instagram.com/buildwharsha/"><b>@buildwharsha</b></a> — say hi on Instagram
+
+</div>
