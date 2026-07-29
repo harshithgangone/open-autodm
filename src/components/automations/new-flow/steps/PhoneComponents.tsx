@@ -261,7 +261,7 @@ export function DMConversationPhone({
                                 </div>
                             </motion.div>
 
-                            {/* Ask-to-follow: creator sends card (RIGHT) */}
+                            {/* Ask-to-follow: creator sends card (RIGHT) — only when they don't follow */}
                             {askToFollowEnabled && phase !== "followed" && (
                                 <motion.div
                                     initial={{ opacity: 0, y: 6 }}
@@ -269,7 +269,9 @@ export function DMConversationPhone({
                                     transition={{ delay: 0.25 }}
                                     className="flex justify-end items-end gap-1.5"
                                 >
-                                    <div className="bg-[#3797f0] rounded-2xl rounded-tr-sm overflow-hidden max-w-[85%]">
+                                    <div className="max-w-[85%] flex flex-col items-end gap-1">
+                                    <p className="text-[8px] text-white/25 uppercase tracking-widest pr-1">Sent only if they don&apos;t follow you</p>
+                                    <div className="bg-[#3797f0] rounded-2xl rounded-tr-sm overflow-hidden">
                                         <div className="px-3 py-2.5">
                                             <p className="text-[11px] leading-relaxed">
                                                 {askToFollowMessage || "Hey! It seems you're not following me yet 😊"}
@@ -286,6 +288,7 @@ export function DMConversationPhone({
                                                 {askToFollowConfirmBtn || "I'm following ✅"}
                                             </button>
                                         </div>
+                                    </div>
                                     </div>
                                     <CreatorAvatar url={creatorProfilePicUrl} size="xs" />
                                 </motion.div>
@@ -318,10 +321,14 @@ export function DMConversationPhone({
                                                 transition={{ delay: 0.15 + i * 0.15 }}
                                                 className="flex justify-end items-end gap-1.5"
                                             >
-                                                <div className="bg-[#3797f0] rounded-2xl rounded-tr-sm px-3 py-2.5 max-w-[85%]">
-                                                    <p className="text-[12px] leading-relaxed whitespace-pre-line">{resp.content || "Your message here..."}</p>
+                                                <div className="bg-[#3797f0] rounded-2xl rounded-tr-sm overflow-hidden max-w-[85%]">
+                                                    <p className="text-[12px] leading-relaxed whitespace-pre-line px-3 py-2.5">{resp.content || "Your message here..."}</p>
                                                     {resp.buttonLink && (
-                                                        <p className="text-[10px] text-white/70 mt-1">🔗 {resp.buttonTitle || resp.buttonLink}</p>
+                                                        <div className="border-t border-white/20">
+                                                            <div className="w-full text-center text-[12px] font-semibold text-white/90 py-2">
+                                                                {resp.buttonTitle || "Open link"}
+                                                            </div>
+                                                        </div>
                                                     )}
                                                 </div>
                                                 <CreatorAvatar url={creatorProfilePicUrl} size="xs" />

@@ -14,7 +14,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import {
     Wrench, KeyRound, Webhook, Clock3, CheckCircle2, Copy, Check,
-    ExternalLink, Loader2, ShieldCheck, AlertTriangle
+    ExternalLink, Loader2, ShieldCheck, AlertTriangle, Users
 } from "lucide-react";
 import { useSetupStatus, useSaveSetup } from "@/hooks/useSetup";
 import { cn } from "@/lib/utils";
@@ -155,8 +155,9 @@ export default function SetupPage() {
                 <div className="mt-4 flex items-start gap-2 text-xs text-muted-foreground bg-muted/30 border border-border/50 rounded-xl px-3 py-2.5">
                     <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-500" />
                     <span>
-                        Your app stays in <b>Development mode</b> — that&apos;s perfect. Development mode delivers real webhooks
-                        for the app admin&apos;s own Instagram account, so <b>you never need Meta App Review</b> to automate your own account.
+                        Your app starts in <b>Development mode</b> — perfect for building and testing. In dev mode, automations
+                        work for accounts that hold a <b>role on your app</b> (you + testers you add — see Step 5). To let the
+                        <b> general public</b> trigger your automations, submit the free Meta <b>App Review</b> once testing passes.
                     </span>
                 </div>
             </StepCard>
@@ -279,6 +280,42 @@ export default function SetupPage() {
                     Verify it works: the query <code className="font-mono bg-muted px-1 rounded">select * from cron.job;</code> should
                     list <code className="font-mono bg-muted px-1 rounded">open-autodm-process-jobs</code>.
                 </p>
+            </StepCard>
+
+            {/* ── Step 5: Who can connect + test accounts ── */}
+            <StepCard step={5} title="Who can trigger it — testers & going public" icon={Users}>
+                <div className="space-y-4 text-sm text-foreground/90">
+                    <p>
+                        While your Meta app is in <b>Development mode</b>, Instagram only delivers events for accounts
+                        that hold a <b>role on the app</b>. That applies to <b>both sides</b>: the account you connect here,
+                        <i> and</i> the audience accounts whose comments / DMs / story replies trigger your automations.
+                        A random stranger&apos;s comment produces <b>no webhook at all</b> in dev mode.
+                    </p>
+                    <div>
+                        <p className="font-semibold text-foreground mb-2">Add a tester account (for testing your automations):</p>
+                        <ol className="space-y-2 list-none">
+                            {[
+                                <>Meta portal → your app → <b>App roles → Roles → Add people</b>.</>,
+                                <>Choose role <b>Instagram Tester</b> → enter their Instagram username → send the invite.</>,
+                                <>They accept it <b>inside the Instagram app</b>: Profile → menu → <b>Settings → Website permissions / Apps and websites → Tester invites → Accept</b>. (Until they accept, their comments and DMs are invisible to your webhook.)</>,
+                            ].map((content, i) => (
+                                <li key={i} className="flex gap-3">
+                                    <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
+                                    <span>{content}</span>
+                                </li>
+                            ))}
+                        </ol>
+                    </div>
+                    <div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted/30 border border-border/50 rounded-xl px-3 py-2.5">
+                        <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-500" />
+                        <span>
+                            <b>Going public:</b> for automations to fire on comments from <i>anyone</i> (not just testers), your app
+                            needs <b>Advanced Access</b> via Meta&apos;s free <b>App Review</b> — portal → App Review → request the
+                            Instagram business permissions you use, upload a short screencast of your working automation flow, and
+                            submit. Typically approved in a few days; nothing in this app changes — events just start flowing for everyone.
+                        </span>
+                    </div>
+                </div>
             </StepCard>
 
             {/* Done card */}

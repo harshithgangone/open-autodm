@@ -534,7 +534,7 @@ export function ConfigureStep({ data, onUpdate, creatorProfilePicUrl }: Configur
                                                 <div className="flex items-center gap-2">
                                                     <p className="text-sm font-bold text-foreground">Require Follow</p>
                                                 </div>
-                                                <p className="text-xs text-muted-foreground">Ask the audience to follow you before delivering the content</p>
+                                                <p className="text-xs text-muted-foreground">Deliver the content only after Instagram confirms they follow you</p>
                                             </div>
                                         </div>
                                         <Toggle on={data.askToFollowEnabled} onChange={() => onUpdate({ askToFollowEnabled: !data.askToFollowEnabled })} />
@@ -591,7 +591,7 @@ export function ConfigureStep({ data, onUpdate, creatorProfilePicUrl }: Configur
                                                             />
                                                         </div>
                                                     </div>
-                                                    <p className="text-[10px] text-muted-foreground/60">Both buttons max 20 characters. Instagram has no API to verify follows — the confirm tap is an honor-system gate (same as every automation tool).</p>
+                                                    <p className="text-[10px] text-muted-foreground/60">Both buttons max 20 characters. Follow status is REALLY checked via Instagram's profile API: on the first tap (followers skip this card entirely) and again when they tap the confirm button — still not following gets a gentle nudge instead of the content.</p>
                                                 </div>
                                             </motion.div>
                                         )}

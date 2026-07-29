@@ -45,9 +45,11 @@ This isn't a scraper or a browser bot — it uses the **official Instagram API**
 | Webhook authenticity | HMAC-SHA256 signature verified over the raw body before *anything* else runs (accepts the Instagram **or** Facebook app-secret signature — Meta uses either depending on app type) |
 | Token safety | Instagram tokens + your App Secret are AES-256-GCM encrypted at rest; auto-refreshed before their 60-day expiry |
 
-**And the best part:** because you self-host with *your own* Meta app and automate *your own* account,
-your app can stay in **Development mode forever — no Meta App Review, no waiting weeks for approval.**
-Development mode delivers real webhooks for the app admin's account, and that's you.
+**Build and test with zero waiting:** in Development mode your app already delivers real events for the
+accounts on your app (you + testers you add) — so you can fully build, test and run automations within your
+own circle immediately, no approval needed. When you want the **general public's** comments to trigger your
+automations, submit Meta's free **App Review** once (a short screencast of your working flow — typically
+approved in days). The in-app Setup Wizard walks you through both stages.
 
 ## 🏗️ Architecture
 

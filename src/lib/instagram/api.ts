@@ -328,6 +328,45 @@ export async function sendInstagramCardDm(
 }
 
 /**
+ * Real follow check via Instagram's User Profile API.
+ *
+ * For any user who has messaged the business (which is always our case — they
+ * just tapped a button, i.e. sent a postback), Meta exposes
+ * `is_user_follow_business` on GET /{IGSID}. This is the same signal
+ * commercial tools use for "require follow" gates.
+ *
+ * Returns:  true = follows · false = does not follow · null = unknown
+ * (API error / field unavailable). Callers must FAIL OPEN on null — never
+ * block a legitimate person because the check itself hiccuped.
+ */
+export async function checkUserFollowsBusiness(
+  audienceIgsid: string,
+  accessToken: string
+): Promise<boolean | null> {
+  try {
+    const res = await fetch(
+      `${META_GRAPH_BASE}/${audienceIgsid}?fields=is_user_follow_business&access_token=${accessToken}`
+    );
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as MetaErrorResponse;
+      debugLog('instagram', 'warn', 'follow_check_failed', 'error',
+        `Follow check for ${audienceIgsid} failed — ${body.error?.code}: ${body.error?.message ?? `HTTP ${res.status}`} (treating as unknown)`,
+        { audienceIgsid, httpStatus: res.status });
+      return null;
+    }
+    const data = (await res.json()) as { is_user_follow_business?: boolean };
+    if (typeof data.is_user_follow_business !== 'boolean') return null;
+    debugLog('instagram', 'info', 'follow_check', 'ok',
+      `Follow check: ${audienceIgsid} ${data.is_user_follow_business ? 'FOLLOWS' : 'does NOT follow'} the account`,
+      { audienceIgsid, follows: data.is_user_follow_business });
+    return data.is_user_follow_business;
+  } catch (err) {
+    logger.warn({ audienceIgsid, err }, 'Follow check network error — unknown');
+    return null;
+  }
+}
+
+/**
  * Subscribes an IG account to webhook fields. Meta requires this per-account
  * call in addition to the app-level webhook URL — without it, NO events fire.
  */

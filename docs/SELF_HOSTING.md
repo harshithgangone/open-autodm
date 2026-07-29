@@ -104,10 +104,13 @@ Verify: `select * from cron.job;` → you should see `open-autodm-process-jobs`.
 ## FAQ
 
 **Do I need Meta App Review?**
-No — that's the whole point of self-hosting. Development-mode apps deliver real webhooks for
-the app's own admins/testers. You're the admin, it's your account. If you later want *other*
-people to log into *your* instance with *their* Instagram accounts, either add them as
-testers on your Meta app (instant), or submit App Review (weeks).
+Not to build, test, or run automations within your own circle: in Development mode, events flow
+for every account that holds a role on your app — you (admin) plus any **Instagram Testers** you
+add (App roles → Roles → Add people → Instagram Tester → they accept in the Instagram app under
+Settings → Website permissions → Tester invites). But dev mode applies to BOTH sides: a comment
+from a random member of the public produces no webhook. To go public, submit the free **App
+Review** for the Instagram business permissions (screencast of your working flow, usually approved
+within days). Nothing changes in the app afterwards — events simply start flowing for everyone.
 
 **Can a friend use my instance?**
 Yes, but only if you let them in — there is no public registration. Two steps:

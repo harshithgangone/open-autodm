@@ -33,6 +33,7 @@ import {
   sendInstagramCardDm,
   sendAskToFollowDm,
   replyToComment,
+  checkUserFollowsBusiness,
   type DmRecipient,
 } from '@/lib/instagram/api';
 import { MetaApiError, AccountPausedMetaError } from '@/lib/instagram/errors';
@@ -468,29 +469,74 @@ export async function processFollowUpDmJob(payload: AutoDmJobPayload): Promise<v
 
   await jitter();
 
-  // ── 3: Ask-to-follow gate ────────────────────────────────────────────────
-  // step 1 tap + gate enabled → send the ask-to-follow card, advance to step 2.
-  // step 2 tap ("I'm following") → honor system (Meta has no follower-check
-  // endpoint; every automation tool uses this same UX gate) → deliver responses.
-  if (expectedStep === 1 && automation.ask_to_follow_enabled) {
-    const confirmPayload = `SESSION_${payload.sessionId}_STEP_2`;
-    await sendAskToFollowDm(payload.igAccountIgsid, payload.triggerUserId, accessToken, {
-      message: automation.ask_to_follow_message,
-      creatorUsername: igAccount.username ?? '',
-      visitProfileButtonTitle: automation.ask_to_follow_visit_profile_button,
-      confirmButtonTitle: automation.ask_to_follow_confirm_button,
-      confirmPayload,
-    });
+  // ── 3: Ask-to-follow gate (REAL follow check) ────────────────────────────
+  // Instagram's User Profile API exposes is_user_follow_business for anyone
+  // who has messaged the account — and a button tap IS a message, so we can
+  // genuinely verify. Flow:
+  //   step 1 tap → check: follower? deliver straight away : send ask card, step 2
+  //   step 2 tap ("I'm following") → RE-CHECK: follower? deliver : gentle nudge
+  // Unknown check results FAIL OPEN (deliver) — never block a real person
+  // because Meta's profile endpoint hiccuped.
+  if (automation.ask_to_follow_enabled && expectedStep === 1) {
+    const follows = await checkUserFollowsBusiness(payload.triggerUserId, accessToken);
 
-    await db
-      .from('automation_sessions')
-      .update({ current_step: 2, last_activity_at: new Date().toISOString() })
-      .eq('id', payload.sessionId);
+    if (follows === false) {
+      const confirmPayload = `SESSION_${payload.sessionId}_STEP_2`;
+      await sendAskToFollowDm(payload.igAccountIgsid, payload.triggerUserId, accessToken, {
+        message: automation.ask_to_follow_message,
+        creatorUsername: igAccount.username ?? '',
+        visitProfileButtonTitle: automation.ask_to_follow_visit_profile_button,
+        confirmButtonTitle: automation.ask_to_follow_confirm_button,
+        confirmPayload,
+      });
 
-    debugLog('worker', 'info', 'ask_to_follow_dm', 'ok', 'Ask-to-follow sent — session at step 2', {
-      sessionId: payload.sessionId,
-    });
-    return;
+      await db
+        .from('automation_sessions')
+        .update({ current_step: 2, last_activity_at: new Date().toISOString() })
+        .eq('id', payload.sessionId);
+
+      debugLog('worker', 'info', 'ask_to_follow_dm', 'ok', 'Not a follower — ask-to-follow card sent, session at step 2', {
+        sessionId: payload.sessionId,
+      });
+      return;
+    }
+
+    debugLog('worker', 'info', 'follow_check', 'ok',
+      follows === true
+        ? 'Audience member already follows — skipping ask-to-follow, delivering content'
+        : 'Follow status unknown — failing open, delivering content',
+      { sessionId: payload.sessionId, triggerUserId: payload.triggerUserId });
+    // Fall through to responses
+  }
+
+  if (automation.ask_to_follow_enabled && expectedStep === 2) {
+    const follows = await checkUserFollowsBusiness(payload.triggerUserId, accessToken);
+
+    if (follows === false) {
+      // Still not following — nudge and keep the session at step 2 so the
+      // card's buttons stay live and they can tap "I'm following" again.
+      await sendInstagramDm(
+        payload.igAccountIgsid,
+        { id: payload.triggerUserId },
+        `Hmm, I still can't see your follow 👀 Tap "${automation.ask_to_follow_visit_profile_button}" above, hit Follow, then tap "${automation.ask_to_follow_confirm_button}" again 🙏`,
+        accessToken
+      );
+      await db
+        .from('automation_sessions')
+        .update({ last_activity_at: new Date().toISOString() })
+        .eq('id', payload.sessionId);
+
+      debugLog('worker', 'info', 'follow_check', 'skipped', 'Re-check: still not following — nudge sent, session stays at step 2', {
+        sessionId: payload.sessionId,
+        triggerUserId: payload.triggerUserId,
+      });
+      return;
+    }
+
+    debugLog('worker', 'info', 'follow_check', 'ok',
+      follows === true ? 'Re-check passed — audience member now follows, delivering content' : 'Re-check unknown — failing open, delivering content',
+      { sessionId: payload.sessionId });
+    // Fall through to responses
   }
 
   // ── 4: Deliver dm_responses sequentially ─────────────────────────────────
