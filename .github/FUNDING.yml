@@ -1,7 +1,7 @@
 # Uncomment + fill any of these and GitHub shows a "Sponsor" button on the repo.
 # Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/displaying-a-sponsor-button-in-your-repository
 
-# github: harshithgangone          # after enabling GitHub Sponsors on your profile
-buy_me_a_coffee: buildwharsha   # https://buymeacoffee.com/buildwharsha
+github: harshithgangone   # enable at github.com/sponsors (supports India payouts)
+# buy_me_a_coffee: —              # BMC does not support India payouts
 # ko_fi: your-username             # https://ko-fi.com
 # custom: ["https://razorpay.me/@your-link"]   # UPI/Razorpay link for Indian supporters

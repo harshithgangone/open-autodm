@@ -141,7 +141,7 @@ If you build something cool on top of this, share it in an issue so others can f
 open-autoDM is free forever and saves you a real monthly subscription. If it saved you money
 or a weekend of building, you can fuel the next feature:
 
-<a href="https://buymeacoffee.com/buildwharsha" target="_blank"><img src="https://img.shields.io/badge/☕_Buy_me_a_coffee-support_the_project-F97316?style=for-the-badge" alt="Buy me a coffee" /></a>
+<a href="https://github.com/sponsors/harshithgangone" target="_blank"><img src="https://img.shields.io/badge/❤️_Sponsor-support_the_project-F97316?style=for-the-badge&logo=githubsponsors" alt="Sponsor on GitHub" /></a>
 
 Starring the repo is free and helps just as much. ⭐
 
