@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { getAuthenticatedUser, unauthorized } from '@/lib/auth';
 import { createServiceClient } from '@/lib/supabase/service';
 import { createLogger } from '@/lib/logger';
-import { DMResponseSchema } from '@/lib/api/schemas';
+import { DMResponseSchema, MAX_DM_RESPONSES } from '@/lib/api/schemas';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -28,7 +28,7 @@ const UpdateAutomationSchema = z.object({
   ask_to_follow_message: z.string().optional(),
   ask_to_follow_visit_profile_button: z.string().optional(),
   ask_to_follow_confirm_button: z.string().optional(),
-  dm_responses: z.array(DMResponseSchema).optional(),
+  dm_responses: z.array(DMResponseSchema).max(MAX_DM_RESPONSES, `Max ${MAX_DM_RESPONSES} responses per automation`).optional(),
 });
 
 type RouteContext = { params: Promise<{ id: string }> };

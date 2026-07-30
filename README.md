@@ -48,7 +48,8 @@ This isn't a scraper or a browser bot - it uses the **official Instagram API** e
 | 200 DMs/hour per account (Meta hard limit) | Atomic Postgres rate limiter capped at **180/hour** (rolling window, 20-DM safety buffer for your manual DMs) |
 | 24-hour messaging window | Checked at webhook receipt **and** again before every send |
 | One DM per person per trigger | `UNIQUE` constraints at the database level - duplicates are physically impossible |
-| No bot-like bursts | Randomized 2-5s humanized delay before every send; sends are sequential, never parallel |
+| No bot-like bursts | Randomized 2-5s delay before every flow, 1-2.5s between consecutive messages; sends are sequential, never parallel |
+| Response bursts | Hard cap of 5 messages per flow (enforced server-side), and every message counts against the hourly window - not just the first |
 | Policy blocks (Meta error 368) | **Circuit breaker**: all sends for the account auto-pause for 24h instead of retrying into a ban |
 | Meta-side rate limit errors (4/17/32/613) | Generous 15-minute backoff, no attempt burned |
 | Webhook authenticity | HMAC-SHA256 signature verified over the raw body before *anything* else runs (accepts the Instagram **or** Facebook app-secret signature - Meta uses either depending on app type) |

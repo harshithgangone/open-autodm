@@ -102,6 +102,7 @@ async function deliverResponsesBestEffort(
   for (const [idx, response] of responses.entries()) {
     if (!response.content?.trim() && response.type !== 'card') continue;
     try {
+      if (sent > 0) await interMessageJitter();
       await sendOneResponse(
         payload.igAccountIgsid,
         { id: payload.triggerUserId },
@@ -156,6 +157,32 @@ export class AccountOnPause extends Error {
 function jitter(): Promise<void> {
   const ms = JITTER_MIN_MS + Math.floor(Math.random() * (JITTER_MAX_MS - JITTER_MIN_MS));
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Shorter humanized pause BETWEEN consecutive responses in one flow. */
+function interMessageJitter(): Promise<void> {
+  const ms = 1200 + Math.floor(Math.random() * 1300);
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Truthful rate accounting: each flow reserves ONE window slot up front, but a
+ * flow can deliver several messages. Record the extras so the next jobs see
+ * the real send count and throttle correctly (fire-and-forget - accounting
+ * must never break a delivery that already happened).
+ */
+function recordExtraSends(accountId: string, extraCount: number): void {
+  if (extraCount <= 0) return;
+  void (async (): Promise<void> => {
+    try {
+      const db = createServiceClient();
+      await db.from('dm_rate_events').insert(
+        Array.from({ length: extraCount }, () => ({ instagram_account_id: accountId }))
+      );
+    } catch (err) {
+      logger.warn({ err, accountId, extraCount }, 'Failed to record extra rate events');
+    }
+  })();
 }
 
 async function checkRateLimit(db: SupabaseClient, accountId: string): Promise<void> {
@@ -509,7 +536,9 @@ export async function processAutoDmJob(payload: AutoDmJobPayload, attempt: numbe
       `No reveal button - delivering ${automation.dm_responses.length} response(s) immediately`, {
         responseCount: automation.dm_responses.length,
       });
-    await deliverResponsesBestEffort(payload, automation.dm_responses, accessToken);
+    const sentCount = await deliverResponsesBestEffort(payload, automation.dm_responses, accessToken);
+    // Opening DM used the reserved slot; responses are extra sends.
+    recordExtraSends(payload.instagramAccountId, sentCount);
   }
 
   // Contacts: DM/story webhooks don't carry a username - enrich it (and the
@@ -715,8 +744,10 @@ export async function processFollowUpDmJob(payload: AutoDmJobPayload): Promise<v
   });
 
   let lastMessageText = '';
+  let deliveredCount = 0;
   for (const [idx, response] of automation.dm_responses.entries()) {
     if (!response.content?.trim() && response.type !== 'card') continue;
+    if (deliveredCount > 0) await interMessageJitter();
 
     if (response.type === 'card') {
       const cardImageUrl = response.cardImage?.startsWith('http') ? response.cardImage : undefined;
@@ -757,11 +788,15 @@ export async function processFollowUpDmJob(payload: AutoDmJobPayload): Promise<v
         lastMessageText = messageText;
       }
     }
+    deliveredCount += 1;
     debugLog('worker', 'info', 'responses_send', 'ok', `Response ${idx + 1}/${automation.dm_responses.length} sent`, {
       responseIndex: idx + 1,
       type: response.type,
     });
   }
+
+  // The tap reserved one slot; anything beyond the first message is extra.
+  recordExtraSends(payload.instagramAccountId, deliveredCount - 1);
 
   // ── 5: Log + complete session ────────────────────────────────────────────
   if (payload.messageText) {

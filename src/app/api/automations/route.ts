@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { getAuthenticatedUser, unauthorized } from '@/lib/auth';
 import { createServiceClient } from '@/lib/supabase/service';
 import { createLogger } from '@/lib/logger';
-import { DMResponseSchema } from '@/lib/api/schemas';
+import { DMResponseSchema, MAX_DM_RESPONSES } from '@/lib/api/schemas';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -32,7 +32,7 @@ const CreateAutomationSchema = z.object({
   askToFollowMessage: z.string().default(''),
   askToFollowVisitProfileButton: z.string().default('Visit Profile'),
   askToFollowConfirmButton: z.string().default("I'm following ✅"),
-  dmResponses: z.array(DMResponseSchema).default([]),
+  dmResponses: z.array(DMResponseSchema).max(MAX_DM_RESPONSES, `Max ${MAX_DM_RESPONSES} responses per automation`).default([]),
 });
 
 export async function GET(request: Request): Promise<Response> {

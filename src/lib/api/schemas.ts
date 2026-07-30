@@ -5,6 +5,14 @@
 
 import { z } from 'zod';
 
+/**
+ * Max responses per automation flow. Every response is its own Meta API send;
+ * a long burst to one person both eats the hourly send budget and looks like
+ * bot behavior to Instagram's spam heuristics. 5 is in line with what
+ * commercial automation tools deliver per flow.
+ */
+export const MAX_DM_RESPONSES = 5;
+
 export const DMResponseSchema = z.object({
   id: z.string(),
   type: z.enum(['text', 'card', 'ask_follow', 'lead_form']),

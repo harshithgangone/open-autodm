@@ -9,6 +9,7 @@ import {
 import { cn } from "@/lib/utils";
 import { AutomationFlowData, DMResponse, CardButton } from "../NewAutomationModal";
 import { CommentsPhone, DMConversationPhone, StoryPhone } from "./PhoneComponents";
+import { MAX_DM_RESPONSES } from "@/lib/api/schemas";
 
 interface ConfigureStepProps {
     data: AutomationFlowData;
@@ -390,7 +391,9 @@ export function ConfigureStep({ data, onUpdate, creatorProfilePicUrl }: Configur
         setCommentInput("");
     };
 
-    const canAddMoreResponses = data.dmOpeningMessageEnabled ? true : data.dmResponses.length < 1;
+    const canAddMoreResponses =
+        data.dmResponses.length < MAX_DM_RESPONSES &&
+        (data.dmOpeningMessageEnabled ? true : data.dmResponses.length < 1);
 
     return (
         <div className="flex h-full overflow-hidden">
@@ -625,6 +628,12 @@ export function ConfigureStep({ data, onUpdate, creatorProfilePicUrl }: Configur
                                 {/* Responses */}
                                 <div className="space-y-2.5">
                                     <SectionHeader title="Responses" />
+
+                                    {data.dmResponses.length >= MAX_DM_RESPONSES && (
+                                        <div className="text-[12px] text-muted-foreground bg-muted/50 rounded-lg px-3 py-2">
+                                            Max {MAX_DM_RESPONSES} responses per flow - each one is a separate Instagram send, and short flows keep your account safe and your audience reading.
+                                        </div>
+                                    )}
 
                                     {!data.dmOpeningMessageEnabled && data.dmResponses.length >= 1 && (
                                         <div className="text-[12px] text-amber-600 dark:text-amber-400 bg-amber-500/10 rounded-lg px-3 py-2 font-medium">
