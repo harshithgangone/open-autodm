@@ -2,7 +2,7 @@
  * Background maintenance endpoint. Secured by CRON_SECRET.
  *
  * Called by:
- *  - Supabase pg_cron every minute (primary — the Setup Wizard generates the
+ *  - Supabase pg_cron every minute (primary - the Setup Wizard generates the
  *    exact SQL snippet), and/or
  *  - Vercel daily cron (vercel.json) as a safety net.
  *
@@ -48,7 +48,7 @@ async function refreshExpiringTokens(): Promise<number> {
 
   let refreshed = 0;
   for (const account of (accounts ?? []) as InstagramAccountRow[]) {
-    // Skip already-expired tokens — Meta cannot refresh those; user must reconnect.
+    // Skip already-expired tokens - Meta cannot refresh those; user must reconnect.
     if (account.token_expires_at && new Date(account.token_expires_at) < new Date()) continue;
 
     try {

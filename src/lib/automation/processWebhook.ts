@@ -1,5 +1,5 @@
 /**
- * Webhook payload processing — routes Meta events to queue jobs.
+ * Webhook payload processing - routes Meta events to queue jobs.
  *
  * Runs AFTER the 200 response has been sent to Meta (via `after()`), so
  * nothing here is latency-critical. Ported 1:1 from the proven receiver:
@@ -30,11 +30,11 @@ const MAX_EVENT_AGE_MS = 25 * 60 * 60 * 1000;
 
 export async function processWebhookPayload(body: MetaWebhookBody): Promise<number> {
   if (body.object !== 'instagram') {
-    debugLog('webhook', 'info', 'payload_routing', 'skipped', `Webhook object "${body.object}" is not instagram — ignoring`, {});
+    debugLog('webhook', 'info', 'payload_routing', 'skipped', `Webhook object "${body.object}" is not instagram - ignoring`, {});
     return 0;
   }
 
-  debugLog('webhook', 'info', 'payload_routing', 'ok', `Processing instagram webhook — ${body.entry.length} entr${body.entry.length === 1 ? 'y' : 'ies'}`, {
+  debugLog('webhook', 'info', 'payload_routing', 'ok', `Processing instagram webhook - ${body.entry.length} entr${body.entry.length === 1 ? 'y' : 'ies'}`, {
     entryIds: body.entry.map((e) => e.id),
   });
 
@@ -58,7 +58,7 @@ export async function processWebhookPayload(body: MetaWebhookBody): Promise<numb
     if (error || !igAccount) {
       debugLog('webhook', 'warn', 'ig_account_lookup', 'skipped', `No active IG account for entry.id=${entry.id}`, {
         entryId: entry.id,
-        hint: 'Meta console "Test" button sends entry.id=0 (fake) — real comments from the connected account are required.',
+        hint: 'Meta console "Test" button sends entry.id=0 (fake) - real comments from the connected account are required.',
       });
       continue;
     }
@@ -95,9 +95,9 @@ async function processCommentEvent(
   comment: MetaCommentChangeValue,
   entryTime: number
 ): Promise<number> {
-  // Only top-level comments trigger — replies are ignored (incl. our own replies)
+  // Only top-level comments trigger - replies are ignored (incl. our own replies)
   if (comment.parent_id) {
-    debugLog('webhook', 'info', 'comment_event', 'skipped', `Comment ${comment.id} is a reply — ignored`, {
+    debugLog('webhook', 'info', 'comment_event', 'skipped', `Comment ${comment.id} is a reply - ignored`, {
       commentId: comment.id,
     });
     return 0;
@@ -105,11 +105,11 @@ async function processCommentEvent(
 
   // Never react to the account's own comments (self-trigger loop guard)
   if (comment.from.id === igAccountIgsid) {
-    debugLog('webhook', 'info', 'comment_event', 'skipped', 'Comment authored by the connected account itself — ignored', {});
+    debugLog('webhook', 'info', 'comment_event', 'skipped', 'Comment authored by the connected account itself - ignored', {});
     return 0;
   }
 
-  // Meta may omit comment.timestamp on IG comment webhooks — fall back to entry.time
+  // Meta may omit comment.timestamp on IG comment webhooks - fall back to entry.time
   const triggerTimestamp = (comment.timestamp ?? entryTime) * 1000;
   const eventAgeMs = Date.now() - triggerTimestamp;
 
@@ -122,7 +122,7 @@ async function processCommentEvent(
   });
 
   if (eventAgeMs > MAX_EVENT_AGE_MS) {
-    debugLog('webhook', 'warn', 'window_check', 'skipped', `Comment ${Math.round(eventAgeMs / 3600000)}h old — beyond processing window`, {});
+    debugLog('webhook', 'warn', 'window_check', 'skipped', `Comment ${Math.round(eventAgeMs / 3600000)}h old - beyond processing window`, {});
     return 0;
   }
 
@@ -165,7 +165,7 @@ async function processCommentEvent(
       continue;
     }
 
-    debugLog('webhook', 'info', 'keyword_match', 'ok', `Automation ${automation.id}: keyword matched — enqueuing`, {
+    debugLog('webhook', 'info', 'keyword_match', 'ok', `Automation ${automation.id}: keyword matched - enqueuing`, {
       automationId: automation.id,
     });
 
@@ -187,7 +187,7 @@ async function processCommentEvent(
     if (jobId) {
       enqueued += 1;
       capturedAutomationId = capturedAutomationId ?? (automation.id as string);
-      debugLog('webhook', 'info', 'job_enqueued', 'ok', `AutoDM job enqueued — ${jobId}`, { jobId });
+      debugLog('webhook', 'info', 'job_enqueued', 'ok', `AutoDM job enqueued - ${jobId}`, { jobId });
     }
   }
 
@@ -211,7 +211,7 @@ async function processDmEvent(
   // Filter echoes (our own sends), read receipts, delivery receipts
   if (messaging.message?.is_echo || messaging.read || messaging.delivery) {
     const kind = messaging.message?.is_echo ? 'echo' : messaging.read ? 'read_receipt' : 'delivery_receipt';
-    debugLog('webhook', 'info', 'dm_event_filtered', 'skipped', `DM event filtered — ${kind}`, { kind });
+    debugLog('webhook', 'info', 'dm_event_filtered', 'skipped', `DM event filtered - ${kind}`, { kind });
     return 0;
   }
   // Self-messaging loop guard
@@ -228,14 +228,14 @@ async function processDmEvent(
   });
 
   if (eventAgeMs > MAX_EVENT_AGE_MS) {
-    debugLog('webhook', 'warn', 'window_check', 'skipped', `DM event ${Math.round(eventAgeMs / 3600000)}h old — beyond window`, {});
+    debugLog('webhook', 'warn', 'window_check', 'skipped', `DM event ${Math.round(eventAgeMs / 3600000)}h old - beyond window`, {});
     return 0;
   }
 
   const db = createServiceClient();
 
   // ── Priority: session button tap (quick_reply OR postback) ───────────────
-  // Both carry "SESSION_{uuid}_STEP_{n}". NEVER route on message.text — the
+  // Both carry "SESSION_{uuid}_STEP_{n}". NEVER route on message.text - the
   // visible label could collide across automations.
   const tapPayload = messaging.message?.quick_reply?.payload ?? messaging.postback?.payload;
   if (tapPayload) {
@@ -246,7 +246,7 @@ async function processDmEvent(
       const eventMid = message?.mid ?? `postback_${messaging.sender.id}_${triggerTimestamp}`;
       const eventText = message?.text ?? messaging.postback?.title ?? null;
 
-      debugLog('webhook', 'info', 'quick_reply_tap', 'processing', `Button tap — session ${sessionId} step ${sessionStep}`, {
+      debugLog('webhook', 'info', 'quick_reply_tap', 'processing', `Button tap - session ${sessionId} step ${sessionStep}`, {
         sessionId,
         sessionStep,
         senderId: messaging.sender.id,
@@ -264,11 +264,11 @@ async function processDmEvent(
         });
         // Fall through to keyword matching rather than dropping the event
       } else if (!session) {
-        debugLog('webhook', 'warn', 'session_lookup', 'skipped', `Session ${sessionId} not found — tap ignored`, { sessionId });
+        debugLog('webhook', 'warn', 'session_lookup', 'skipped', `Session ${sessionId} not found - tap ignored`, { sessionId });
         return 0;
       } else if (session.completed || new Date(session.expires_at as string) < new Date()) {
         debugLog('webhook', 'info', 'session_lookup', 'skipped',
-          `Session ${sessionId} is ${session.completed ? 'completed' : 'expired'} — tap ignored`, { sessionId });
+          `Session ${sessionId} is ${session.completed ? 'completed' : 'expired'} - tap ignored`, { sessionId });
         return 0;
       } else {
         const followUpPayload: AutoDmJobPayload = {
@@ -287,7 +287,7 @@ async function processDmEvent(
           sessionStep,
         };
         const jobId = await enqueueJob('follow_up', followUpPayload, `followup_${sessionId}_${sessionStep}_${eventMid}`);
-        debugLog('webhook', 'info', 'job_enqueued', jobId ? 'ok' : 'skipped', `Follow-up job ${jobId ? `enqueued (${jobId})` : 'duplicate — ignored'}`, {
+        debugLog('webhook', 'info', 'job_enqueued', jobId ? 'ok' : 'skipped', `Follow-up job ${jobId ? `enqueued (${jobId})` : 'duplicate - ignored'}`, {
           sessionId,
           sessionStep,
         });
@@ -304,12 +304,12 @@ async function processDmEvent(
     }
   }
 
-  // ── Keyword matching — story replies vs plain DMs ────────────────────────
+  // ── Keyword matching - story replies vs plain DMs ────────────────────────
   // A story reply arrives as a normal messaging event with message.reply_to.story
   // set. It routes ONLY to story_reply automations; plain DMs route ONLY to
-  // dm_reply automations — one event never fires both types.
+  // dm_reply automations - one event never fires both types.
   if (!message?.text) {
-    debugLog('webhook', 'info', 'dm_event', 'skipped', 'DM has no text — skipping keyword match', {});
+    debugLog('webhook', 'info', 'dm_event', 'skipped', 'DM has no text - skipping keyword match', {});
     return 0;
   }
 
@@ -350,7 +350,7 @@ async function processDmEvent(
       continue;
     }
 
-    debugLog('webhook', 'info', 'keyword_match', 'ok', `${automationType} ${automation.id}: matched — enqueuing`, {
+    debugLog('webhook', 'info', 'keyword_match', 'ok', `${automationType} ${automation.id}: matched - enqueuing`, {
       automationId: automation.id,
     });
 

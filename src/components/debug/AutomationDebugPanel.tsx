@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * AutomationDebugPanel — real-time automation event log.
+ * AutomationDebugPanel - real-time automation event log.
  *
  * Only rendered when NEXT_PUBLIC_DEBUG=true (add to .env.local).
  * Polls /debug/events every 2.5 seconds.

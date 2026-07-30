@@ -1,5 +1,5 @@
 /**
- * GET /api/instagram/accounts — connected accounts with token + pause status.
+ * GET /api/instagram/accounts - connected accounts with token + pause status.
  * The token itself is never returned.
  */
 

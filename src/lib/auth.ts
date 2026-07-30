@@ -1,7 +1,7 @@
 /**
  * Route-handler authentication.
  *
- * The user's identity ALWAYS comes from a verified Supabase JWT — never from
+ * The user's identity ALWAYS comes from a verified Supabase JWT - never from
  * the request body or URL params. Two accepted transports:
  *   1. Authorization: Bearer <jwt>  (used by the in-app API client)
  *   2. Supabase session cookies     (used by top-level browser navigations,

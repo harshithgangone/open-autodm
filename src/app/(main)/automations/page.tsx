@@ -90,7 +90,7 @@ export default function AutomationsPage() {
                 editAutomation={editingAutomation}
             />
 
-            {/* Debug panel — visible only when NEXT_PUBLIC_DEBUG=true */}
+            {/* Debug panel - visible only when NEXT_PUBLIC_DEBUG=true */}
             <AutomationDebugPanel />
         </div>
     );

@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { useContacts, type ContactFromDB } from "@/hooks/useContacts";
 
 /**
- * Contacts — every unique audience member captured through an automation:
+ * Contacts - every unique audience member captured through an automation:
  * they commented a trigger keyword, DM'd one, story-replied one, or tapped a
  * flow button. Enriched with username + follow status from Instagram's
  * profile API as the engine interacts with them.
@@ -81,8 +81,8 @@ export function ContactsList() {
                 </div>
                 <h3 className="text-xl font-heading font-bold mb-2 text-foreground">No Contacts Yet</h3>
                 <p className="text-muted-foreground max-w-sm">
-                    Every person who triggers one of your automations — a comment, DM keyword, story reply,
-                    or button tap — appears here automatically, with their follow status.
+                    Every person who triggers one of your automations - a comment, DM keyword, story reply,
+                    or button tap - appears here automatically, with their follow status.
                 </p>
             </div>
         );
@@ -163,11 +163,11 @@ export function ContactsList() {
                                                 {trigger.label}
                                             </span>
                                         ) : (
-                                            <span className="text-muted-foreground text-xs">—</span>
+                                            <span className="text-muted-foreground text-xs">-</span>
                                         )}
                                     </td>
                                     <td className="px-5 py-3 font-medium text-foreground/80 max-w-[220px] truncate">
-                                        {contact.automations?.name ?? "—"}
+                                        {contact.automations?.name ?? "-"}
                                     </td>
                                     <td className="px-5 py-3">
                                         <span className="font-bold font-heading">{contact.total_triggers}</span>

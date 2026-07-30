@@ -85,7 +85,7 @@ export function AutomationsList({ automations, isLoading, onToggle, onDelete, on
                         )}
                     >
                         <div className="flex items-center justify-between gap-4 p-3.5">
-                            {/* Left — thumb + info */}
+                            {/* Left - thumb + info */}
                             <div className="flex items-center gap-3 flex-1 min-w-0">
                                 <div className="shrink-0">
                                     {automation.type !== "comment_dm" ? (
@@ -134,7 +134,7 @@ export function AutomationsList({ automations, isLoading, onToggle, onDelete, on
                                 </div>
                             </div>
 
-                            {/* Right — stats + actions */}
+                            {/* Right - stats + actions */}
                             <div className="flex items-center gap-4 shrink-0">
                                 <div className="hidden sm:flex flex-col items-end">
                                     <span className="text-[15px] font-heading font-semibold tabular-nums leading-tight">{automation.total_dms_sent.toLocaleString()}</span>
@@ -142,7 +142,7 @@ export function AutomationsList({ automations, isLoading, onToggle, onDelete, on
                                 </div>
 
                                 <div className="flex items-center gap-1">
-                                    {/* Toggle — frozen when inactive (activate via edit) */}
+                                    {/* Toggle - frozen when inactive (activate via edit) */}
                                     <div className="relative group/toggle mr-1">
                                         <button
                                             onClick={() => isActive ? onToggle(automation.id, isActive) : undefined}

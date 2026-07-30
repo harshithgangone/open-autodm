@@ -1,5 +1,5 @@
 /**
- * GET /api/instagram/posts/:accountId — the creator's media grid.
+ * GET /api/instagram/posts/:accountId - the creator's media grid.
  * Cursor-paginated from the Meta Graph API, with a short in-memory cache
  * (per warm serverless instance) so browsing the picker doesn't hammer Meta.
  */
@@ -86,8 +86,8 @@ export async function GET(request: Request, context: RouteContext): Promise<Resp
   try {
     accessToken = decrypt(igAccount.access_token_encrypted as string, getEnv().TOKEN_ENCRYPTION_KEY);
   } catch {
-    logger.error({ accountId }, 'Failed to decrypt token — account needs reconnection');
-    return Response.json({ error: 'Failed to access Instagram account — please reconnect' }, { status: 500 });
+    logger.error({ accountId }, 'Failed to decrypt token - account needs reconnection');
+    return Response.json({ error: 'Failed to access Instagram account - please reconnect' }, { status: 500 });
   }
 
   const fields = 'id,media_type,thumbnail_url,media_url,permalink,timestamp,caption,like_count,comments_count';

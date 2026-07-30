@@ -1,5 +1,5 @@
 /**
- * GET /api/instagram/subscription-status/:accountId — which webhook fields
+ * GET /api/instagram/subscription-status/:accountId - which webhook fields
  * Meta currently has subscribed for this account ("Check Status" button).
  */
 

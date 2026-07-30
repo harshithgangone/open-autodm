@@ -126,7 +126,7 @@ export function StoryPhone({ keyword }: { keyword: string }) {
     );
 }
 
-/* ─── DM conversation phone — creator's perspective ───
+/* ─── DM conversation phone - creator's perspective ───
    Creator messages: RIGHT (blue). Audience: LEFT (gray).
    `trigger` renders the audience's triggering message first (dm/story flows). */
 export function DMConversationPhone({
@@ -149,7 +149,7 @@ export function DMConversationPhone({
 }) {
     const textResponses = responses.filter(r => r.type === "text");
     const hasQuickReply = !!openingBtnTitle?.trim();
-    // Without an opening button there is no tap step — responses show immediately.
+    // Without an opening button there is no tap step - responses show immediately.
     const showResponses = hasQuickReply ? (phase !== "initial" && (!askToFollowEnabled || phase === "followed")) : true;
 
     return (
@@ -173,7 +173,7 @@ export function DMConversationPhone({
 
             <div className="flex-1 overflow-y-auto px-3 py-2.5 space-y-2.5 flex flex-col scrollbar-none">
 
-                {/* Audience trigger message (dm / story flows) — LEFT */}
+                {/* Audience trigger message (dm / story flows) - LEFT */}
                 {trigger && (
                     <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-start gap-1">
                         {trigger.kind === "story" && (
@@ -191,7 +191,7 @@ export function DMConversationPhone({
                     </motion.div>
                 )}
 
-                {/* Opening message — RIGHT */}
+                {/* Opening message - RIGHT */}
                 {openingEnabled && openingMessage && (
                     <motion.div
                         initial={{ opacity: 0, y: 6 }}
@@ -218,7 +218,7 @@ export function DMConversationPhone({
                 <AnimatePresence>
                     {hasQuickReply && phase !== "initial" && (
                         <>
-                            {/* Audience tap echo — LEFT */}
+                            {/* Audience tap echo - LEFT */}
                             <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex items-end gap-1.5">
                                 <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-pink-500 to-orange-400 shrink-0" />
                                 <div className="bg-[#1e1e22] rounded-2xl rounded-bl-sm px-3 py-2 max-w-[80%]">
@@ -226,7 +226,7 @@ export function DMConversationPhone({
                                 </div>
                             </motion.div>
 
-                            {/* Ask-to-follow card — RIGHT (only for non-followers) */}
+                            {/* Ask-to-follow card - RIGHT (only for non-followers) */}
                             {askToFollowEnabled && phase !== "followed" && (
                                 <motion.div
                                     initial={{ opacity: 0, y: 6 }}
@@ -257,7 +257,7 @@ export function DMConversationPhone({
                                 </motion.div>
                             )}
 
-                            {/* "I'm following" tap echo — LEFT */}
+                            {/* "I'm following" tap echo - LEFT */}
                             {askToFollowEnabled && phase === "followed" && (
                                 <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex items-end gap-1.5">
                                     <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-pink-500 to-orange-400 shrink-0" />
@@ -270,7 +270,7 @@ export function DMConversationPhone({
                     )}
                 </AnimatePresence>
 
-                {/* Responses — RIGHT */}
+                {/* Responses - RIGHT */}
                 {showResponses && (
                     <>
                         {textResponses.map((resp, i) => (

@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════════════════════════
--- open-autoDM — Core schema
+-- open-autoDM - Core schema
 --
 -- profiles            → extends auth.users
 -- instagram_accounts  → connected IG accounts (AES-256-GCM encrypted tokens)
@@ -126,7 +126,7 @@ CREATE TABLE public.automations (
   -- Otherwise: case-insensitive whole-word match.
   keywords                            TEXT[],
 
-  -- Public comment replies — one picked at random per trigger. Empty = none.
+  -- Public comment replies - one picked at random per trigger. Empty = none.
   comment_reply_options               TEXT[]          NOT NULL DEFAULT '{}',
 
   -- Opening DM
@@ -135,7 +135,7 @@ CREATE TABLE public.automations (
   dm_opening_message_button_title     TEXT,
   dm_opening_message_button_link      TEXT,
 
-  -- Ask-to-follow gate (honor system — Meta has no follower-check endpoint)
+  -- Ask-to-follow gate (honor system - Meta has no follower-check endpoint)
   ask_to_follow_enabled               BOOLEAN         NOT NULL DEFAULT false,
   ask_to_follow_message               TEXT            NOT NULL DEFAULT 'Hey! It seems you''re not following me yet 😊',
   ask_to_follow_visit_profile_button  TEXT            NOT NULL DEFAULT 'Visit Profile',
@@ -211,7 +211,7 @@ CREATE POLICY "Users can view own dm jobs"
   ON public.dm_jobs FOR SELECT
   USING (EXISTS (SELECT 1 FROM public.automations a WHERE a.id = dm_jobs.automation_id AND a.user_id = auth.uid()));
 
--- ── dm_sent_log (deduplication — DB-level guarantee) ───────────────────────
+-- ── dm_sent_log (deduplication - DB-level guarantee) ───────────────────────
 CREATE TABLE public.dm_sent_log (
   id                    UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   instagram_account_id  UUID        NOT NULL REFERENCES public.instagram_accounts(id) ON DELETE CASCADE,

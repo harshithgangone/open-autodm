@@ -1,5 +1,5 @@
 /**
- * Message personalization — supports the `{username}` placeholder.
+ * Message personalization - supports the `{username}` placeholder.
  *
  * Comment webhooks carry the commenter's username; DM/story-reply webhooks do
  * not. When no username is known the placeholder is stripped and surrounding

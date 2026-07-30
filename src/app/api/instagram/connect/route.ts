@@ -1,5 +1,5 @@
 /**
- * GET /api/instagram/connect — build the Instagram Business Login URL.
+ * GET /api/instagram/connect - build the Instagram Business Login URL.
  * Returns { url }; the frontend navigates the browser there.
  */
 

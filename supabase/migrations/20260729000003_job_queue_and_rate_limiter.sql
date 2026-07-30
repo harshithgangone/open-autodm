@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════════════════════════
--- open-autoDM — Postgres-native job queue + sliding-window rate limiter
+-- open-autoDM - Postgres-native job queue + sliding-window rate limiter
 --
 -- Replaces BullMQ + Redis from the original two-service architecture.
 -- Serverless-safe: jobs are claimed with FOR UPDATE SKIP LOCKED so any number
@@ -14,7 +14,7 @@ CREATE TABLE public.job_queue (
   id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   job_type     TEXT        NOT NULL CHECK (job_type IN ('auto_dm', 'follow_up')),
   payload      JSONB       NOT NULL,
-  -- Idempotency: Meta retries webhooks — same event never creates two jobs.
+  -- Idempotency: Meta retries webhooks - same event never creates two jobs.
   dedupe_key   TEXT        NOT NULL UNIQUE,
   status       TEXT        NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'done', 'failed')),
   run_after    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -79,7 +79,7 @@ ALTER TABLE public.dm_rate_events ENABLE ROW LEVEL SECURITY;
 -- records the send and returns allowed=true. Runs in a single transaction with
 -- a per-account advisory lock, so concurrent invocations can never overshoot.
 --
--- Default limit 180/hour: Meta's hard limit is 200 — the 20-DM buffer covers
+-- Default limit 180/hour: Meta's hard limit is 200 - the 20-DM buffer covers
 -- manual DMs the creator sends themselves.
 CREATE OR REPLACE FUNCTION public.check_and_record_dm_rate_limit(
   p_account_id UUID,

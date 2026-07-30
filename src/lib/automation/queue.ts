@@ -5,7 +5,7 @@
  * (FOR UPDATE SKIP LOCKED) so any number of concurrent serverless invocations
  * can drain the queue without double-processing.
  *
- * Idempotency: dedupe_key is unique — Meta webhook retries for the same event
+ * Idempotency: dedupe_key is unique - Meta webhook retries for the same event
  * can never create a second job (mirrors BullMQ's jobId dedupe).
  */
 
@@ -35,8 +35,8 @@ export async function enqueueJob(
 
   if (error) {
     if (error.code === '23505') {
-      // Duplicate event (Meta webhook retry) — already queued or processed
-      logger.info({ dedupeKey }, 'Job already exists — duplicate event ignored');
+      // Duplicate event (Meta webhook retry) - already queued or processed
+      logger.info({ dedupeKey }, 'Job already exists - duplicate event ignored');
       return null;
     }
     logger.error({ err: error, dedupeKey }, 'Failed to enqueue job');
@@ -74,7 +74,7 @@ export async function markJobFailed(jobId: string, errorMessage: string): Promis
 }
 
 /**
- * Re-schedules a job. `countAttempt=false` is used for rate-limit delays —
+ * Re-schedules a job. `countAttempt=false` is used for rate-limit delays -
  * waiting for the window to free up is not a failure.
  */
 export async function rescheduleJob(

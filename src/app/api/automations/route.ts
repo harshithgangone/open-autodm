@@ -1,5 +1,5 @@
 /**
- * Automations CRUD — list + create.
+ * Automations CRUD - list + create.
  * Identity always from the verified JWT; ownership always checked in SQL.
  */
 
@@ -76,7 +76,7 @@ export async function POST(request: Request): Promise<Response> {
   const parsed = CreateAutomationSchema.safeParse(body);
   if (!parsed.success) {
     const detail = parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ');
-    return Response.json({ error: `Validation failed — ${detail}`, details: parsed.error.issues }, { status: 400 });
+    return Response.json({ error: `Validation failed - ${detail}`, details: parsed.error.issues }, { status: 400 });
   }
   const data = parsed.data;
 

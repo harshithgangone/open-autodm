@@ -1,5 +1,5 @@
 /**
- * POST /api/instagram/resubscribe/:accountId — re-run the per-account webhook
+ * POST /api/instagram/resubscribe/:accountId - re-run the per-account webhook
  * field subscription ("Fix Webhooks" button). Use when comments stop arriving.
  */
 

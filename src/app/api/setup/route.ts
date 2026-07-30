@@ -57,7 +57,7 @@ export async function GET(request: Request): Promise<Response> {
   const settings = await getMetaSettings();
   const appUrl = getAppUrl(request);
 
-  // Read the raw row too — settings is null until fully configured, but a
+  // Read the raw row too - settings is null until fully configured, but a
   // partially-saved verify token should survive wizard re-entry.
   const db = createServiceClient();
   const { data: row } = await db
@@ -91,7 +91,7 @@ export async function POST(request: Request): Promise<Response> {
   const parsed = SaveSetupSchema.safeParse(body);
   if (!parsed.success) {
     const detail = parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ');
-    return Response.json({ error: `Validation failed — ${detail}` }, { status: 400 });
+    return Response.json({ error: `Validation failed - ${detail}` }, { status: 400 });
   }
 
   try {
@@ -99,7 +99,7 @@ export async function POST(request: Request): Promise<Response> {
     // the actual list of missing vars so the self-hoster can fix it).
     getEnv();
 
-    // Preserve the existing verify token if one was generated before —
+    // Preserve the existing verify token if one was generated before -
     // regenerating it would silently break the webhook registered in Meta.
     const db = createServiceClient();
     const { data: existing } = await db
@@ -131,7 +131,7 @@ export async function POST(request: Request): Promise<Response> {
       return Response.json(
         {
           error:
-            'Database schema is missing — the migrations have not been applied to your Supabase project. ' +
+            'Database schema is missing - the migrations have not been applied to your Supabase project. ' +
             'Run: supabase link --project-ref <your-ref> && supabase db push, then try again.',
         },
         { status: 500 }

@@ -57,7 +57,7 @@ function SettingsContent() {
             const debugDetail = searchParams.get("debug");
             setBanner({
                 type: "error",
-                message: (errorMessages[igError] ?? `Error: ${igError}`) + (debugDetail ? ` — ${debugDetail}` : ""),
+                message: (errorMessages[igError] ?? `Error: ${igError}`) + (debugDetail ? ` - ${debugDetail}` : ""),
             });
             window.history.replaceState({}, "", "/settings");
         }
@@ -126,7 +126,7 @@ function SettingsContent() {
         setRefreshingId(accountId);
         try {
             await refreshMutation.mutateAsync(accountId);
-            setBanner({ type: "success", message: "Token refreshed — good for another 60 days." });
+            setBanner({ type: "success", message: "Token refreshed - good for another 60 days." });
         } catch (err) {
             const apiErr = err instanceof ApiError ? err : null;
             if (apiErr?.status === 400) {
@@ -172,8 +172,8 @@ function SettingsContent() {
                     <h2 className="text-[14px] font-heading font-semibold text-foreground">Meta app</h2>
                     <p className="text-[13px] text-muted-foreground mt-0.5 truncate">
                         {setup?.configured
-                            ? <>Configured — app <code className="font-mono text-[11px] bg-muted px-1.5 py-0.5 rounded">{setup.metaAppId}</code></>
-                            : "Not configured — the engine is offline until setup is complete."}
+                            ? <>Configured - app <code className="font-mono text-[11px] bg-muted px-1.5 py-0.5 rounded">{setup.metaAppId}</code></>
+                            : "Not configured - the engine is offline until setup is complete."}
                     </p>
                 </div>
                 <Link
@@ -223,7 +223,7 @@ function SettingsContent() {
                                     <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg text-[12px] font-medium bg-destructive/10 text-destructive">
                                         <PauseCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                                         <span>
-                                            <b>Safety pause</b> — Instagram flagged sends, so DMs are paused
+                                            <b>Safety pause</b> - Instagram flagged sends, so DMs are paused
                                             until {account.paused_until ? new Date(account.paused_until).toLocaleString() : "later"} to
                                             protect this account.
                                         </span>
@@ -241,8 +241,8 @@ function SettingsContent() {
                                             <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                                             <span className="truncate">
                                                 {account.token_status === "expired"
-                                                    ? "Token expired — automations paused. Reconnect to resume."
-                                                    : `Token expires in ${account.token_days_remaining} day${account.token_days_remaining === 1 ? "" : "s"} — the cron auto-refreshes it, or refresh now.`}
+                                                    ? "Token expired - automations paused. Reconnect to resume."
+                                                    : `Token expires in ${account.token_days_remaining} day${account.token_days_remaining === 1 ? "" : "s"} - the cron auto-refreshes it, or refresh now.`}
                                             </span>
                                         </div>
                                         {account.token_status === "expiring" ? (
@@ -342,7 +342,7 @@ function SettingsContent() {
                                                 </div>
                                                 {!subStatus[account.id]?.hasComments && (
                                                     <div className="text-[10px]">
-                                                        Comments aren&apos;t subscribed — use &ldquo;Fix webhooks&rdquo;, and check the Callback URL is verified in the Meta portal.
+                                                        Comments aren&apos;t subscribed - use &ldquo;Fix webhooks&rdquo;, and check the Callback URL is verified in the Meta portal.
                                                     </div>
                                                 )}
                                             </div>

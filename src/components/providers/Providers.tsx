@@ -1,12 +1,12 @@
 'use client';
 
 /**
- * AppProviders — wraps the app with all client-side providers.
+ * AppProviders - wraps the app with all client-side providers.
  *
  * Providers included:
- *   1. ThemeProvider — existing dark/light mode provider (unchanged)
- *   2. QueryClientProvider — TanStack Query for server state caching
- *   3. Supabase auth listener — keeps Zustand store in sync with session
+ *   1. ThemeProvider - existing dark/light mode provider (unchanged)
+ *   2. QueryClientProvider - TanStack Query for server state caching
+ *   3. Supabase auth listener - keeps Zustand store in sync with session
  *
  * This is a Client Component because it sets up listeners and providers that
  * require browser APIs. The children (which may be Server Components) are

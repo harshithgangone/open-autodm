@@ -1,5 +1,5 @@
 /**
- * Shared domain types — DB rows, job payloads, Meta webhook shapes.
+ * Shared domain types - DB rows, job payloads, Meta webhook shapes.
  */
 
 // ── Automations ─────────────────────────────────────────────────────────────
@@ -126,7 +126,7 @@ export interface MetaCommentChangeValue {
   media: { id: string };
   id: string; // comment ID
   text: string;
-  timestamp?: number; // unix seconds — Meta may omit on IG comment webhooks
+  timestamp?: number; // unix seconds - Meta may omit on IG comment webhooks
   parent_id?: string;
 }
 

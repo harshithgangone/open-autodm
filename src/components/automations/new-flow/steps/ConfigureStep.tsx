@@ -23,7 +23,7 @@ const MAX_IMAGE_BYTES = 2 * 1024 * 1024; // 2 MB
 const inputCls = "w-full text-[13px] bg-background border border-border rounded-lg px-3 py-2 outline-none focus:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring/30 transition-colors";
 const textareaCls = "w-full text-[13px] bg-background border border-border rounded-lg px-3 py-2 outline-none focus:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring/30 transition-colors resize-none";
 
-/* Per-type copy — the builder speaks the trigger's language */
+/* Per-type copy - the builder speaks the trigger's language */
 const TYPE_COPY: Record<string, {
     triggerTitle: string;
     keywordModeSpecific: string;
@@ -43,7 +43,7 @@ const TYPE_COPY: Record<string, {
         keywordModeSpecific: "Specific keywords",
         keywordModeAny: "Any message",
         keywordPlaceholder: "e.g. DIET, GUIDE, LINK…",
-        anyModeHint: "Any message replies to EVERY DM you receive — including real conversations. Use specific keywords unless you're sure.",
+        anyModeHint: "Any message replies to EVERY DM you receive - including real conversations. Use specific keywords unless you're sure.",
     },
     "story-reply": {
         triggerTitle: "When someone replies to your story",
@@ -394,7 +394,7 @@ export function ConfigureStep({ data, onUpdate, creatorProfilePicUrl }: Configur
 
     return (
         <div className="flex h-full overflow-hidden">
-            {/* ── Left — form ── */}
+            {/* ── Left - form ── */}
             <div className="flex-1 min-w-0 overflow-y-auto p-5 space-y-6 custom-scrollbar">
 
                 {/* Name */}
@@ -408,7 +408,7 @@ export function ConfigureStep({ data, onUpdate, creatorProfilePicUrl }: Configur
                     />
                 </section>
 
-                {/* Post context — comment automations only */}
+                {/* Post context - comment automations only */}
                 {isComment && (
                     <>
                         {data.postThumbnailUrl ? (
@@ -444,7 +444,7 @@ export function ConfigureStep({ data, onUpdate, creatorProfilePicUrl }: Configur
                     />
                 </section>
 
-                {/* Public comment replies — comment automations only */}
+                {/* Public comment replies - comment automations only */}
                 {isComment && (
                     <section className="space-y-2.5">
                         <SectionHeader title="Public comment reply" />
@@ -541,7 +541,7 @@ export function ConfigureStep({ data, onUpdate, creatorProfilePicUrl }: Configur
 
                                                     <div className="rounded-lg border border-border p-2.5 space-y-1.5">
                                                         <p className="micro-label">Reveal button</p>
-                                                        <p className="text-[11px] text-muted-foreground">They tap this to receive your responses — the tap confirms real interest.</p>
+                                                        <p className="text-[11px] text-muted-foreground">They tap this to receive your responses - the tap confirms real interest.</p>
                                                         <input
                                                             value={data.dmOpeningMessageButtonTitle}
                                                             onChange={e => onUpdate({ dmOpeningMessageButtonTitle: e.target.value })}
@@ -613,7 +613,7 @@ export function ConfigureStep({ data, onUpdate, creatorProfilePicUrl }: Configur
                                                         </div>
                                                     </div>
                                                     <p className="text-[10px] text-muted-foreground">
-                                                        Follow status is really checked via Instagram&apos;s profile API — followers skip this card,
+                                                        Follow status is really checked via Instagram&apos;s profile API - followers skip this card,
                                                         and the confirm tap re-checks before delivering.
                                                     </p>
                                                 </div>
@@ -628,7 +628,7 @@ export function ConfigureStep({ data, onUpdate, creatorProfilePicUrl }: Configur
 
                                     {!data.dmOpeningMessageEnabled && data.dmResponses.length >= 1 && (
                                         <div className="text-[12px] text-amber-600 dark:text-amber-400 bg-amber-500/10 rounded-lg px-3 py-2 font-medium">
-                                            Opening message is off — only one response is sent.
+                                            Opening message is off - only one response is sent.
                                         </div>
                                     )}
 
@@ -665,7 +665,7 @@ export function ConfigureStep({ data, onUpdate, creatorProfilePicUrl }: Configur
                 </section>
             </div>
 
-            {/* ── Right — phones ── */}
+            {/* ── Right - phones ── */}
             <div className="hidden xl:flex w-[600px] shrink-0 bg-[#0a0a0b] border-l border-border overflow-hidden relative">
                 <div
                     className="absolute inset-0 opacity-[0.12] pointer-events-none"

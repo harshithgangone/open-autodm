@@ -1,5 +1,5 @@
 /**
- * Service-role Supabase client — server-side only.
+ * Service-role Supabase client - server-side only.
  *
  * Bypasses RLS. Used by the automation engine, webhook processing, and API
  * routes after the user's identity has been verified from their JWT.

@@ -19,7 +19,7 @@ export class ApiError extends Error {
 
 export async function apiClient<T>(path: string, options?: RequestInit & { skipAuth?: boolean }): Promise<T> {
   const headers: Record<string, string> = {
-    // Content-Type only when a body exists — bodyless requests with a JSON
+    // Content-Type only when a body exists - bodyless requests with a JSON
     // Content-Type can confuse some runtimes into parsing an empty body.
     ...(options?.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
     ...(options?.headers as Record<string, string> | undefined),

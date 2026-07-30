@@ -10,7 +10,7 @@ next-env.d.ts
 .open-next/
 .wrangler/
 
-# env — NEVER commit real secrets
+# env - NEVER commit real secrets
 .env
 .env.local
 .env*.local

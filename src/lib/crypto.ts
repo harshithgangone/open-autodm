@@ -1,7 +1,7 @@
 /**
  * AES-256-GCM encryption for secrets at rest (Instagram tokens, Meta App Secret).
  *
- * Output format: iv_hex:ciphertext_hex:authtag_hex — self-contained.
+ * Output format: iv_hex:ciphertext_hex:authtag_hex - self-contained.
  * Runs on the Node runtime (Vercel) and on Cloudflare Workers via the
  * `nodejs_compat` flag (node:crypto is supported by workerd).
  */
@@ -9,7 +9,7 @@
 import { createCipheriv, createDecipheriv, randomBytes, timingSafeEqual, createHmac } from 'node:crypto';
 
 const ALGORITHM = 'aes-256-gcm';
-const IV_LENGTH = 12; // 96-bit IV — recommended for GCM
+const IV_LENGTH = 12; // 96-bit IV - recommended for GCM
 const AUTH_TAG_LENGTH = 16;
 
 function keyFromHex(encryptionKeyHex: string): Buffer {
@@ -33,7 +33,7 @@ export function decrypt(encryptedString: string, encryptionKeyHex: string): stri
   const key = keyFromHex(encryptionKeyHex);
   const parts = encryptedString.split(':');
   if (parts.length !== 3) {
-    throw new Error('Invalid encrypted string format — expected iv:ciphertext:authTag');
+    throw new Error('Invalid encrypted string format - expected iv:ciphertext:authTag');
   }
   const [ivHex, ciphertextHex, authTagHex] = parts as [string, string, string];
   const decipher = createDecipheriv(ALGORITHM, key, Buffer.from(ivHex, 'hex'), {
@@ -47,7 +47,7 @@ export function decrypt(encryptedString: string, encryptionKeyHex: string): stri
   return decrypted.toString('utf8');
 }
 
-/** Constant-time comparison — prevents timing attacks on webhook signatures. */
+/** Constant-time comparison - prevents timing attacks on webhook signatures. */
 export function safeCompare(a: string, b: string): boolean {
   const bufA = Buffer.from(a);
   const bufB = Buffer.from(b);
@@ -55,7 +55,7 @@ export function safeCompare(a: string, b: string): boolean {
   return timingSafeEqual(bufA, bufB);
 }
 
-/** HMAC-SHA256 hex digest — used for Meta webhook signature verification. */
+/** HMAC-SHA256 hex digest - used for Meta webhook signature verification. */
 export function hmacSha256Hex(secret: string, payload: Buffer | string): string {
   return createHmac('sha256', secret).update(payload).digest('hex');
 }

@@ -29,7 +29,7 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  // getUser() also refreshes the session token when needed — call it before
+  // getUser() also refreshes the session token when needed - call it before
   // any redirect decisions.
   const {
     data: { user },

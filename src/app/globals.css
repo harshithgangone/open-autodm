@@ -36,7 +36,7 @@
 }
 
 :root {
-  /* LIGHT — quiet paper console */
+  /* LIGHT - quiet paper console */
   --background: #FAFAFA;
   --foreground: #121215;
 
@@ -69,7 +69,7 @@
 }
 
 .dark {
-  /* DARK — near-black console, hairline borders */
+  /* DARK - near-black console, hairline borders */
   --background: #0A0A0B;
   --foreground: #F3F3F5;
 
@@ -111,7 +111,7 @@
   }
 }
 
-/* The one warm thread — the Instagram sunset, used thin and sparingly */
+/* The one warm thread - the Instagram sunset, used thin and sparingly */
 .ig-thread {
   background-image: linear-gradient(90deg, #f09433, #e6683c, #dc2743, #bc1888);
 }
@@ -119,7 +119,7 @@
   background-image: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #bc1888);
 }
 
-/* Section micro-label — the console's structural voice */
+/* Section micro-label - the console's structural voice */
 .micro-label {
   font-size: 11px;
   font-weight: 600;

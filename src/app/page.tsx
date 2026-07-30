@@ -66,7 +66,7 @@ export default function LoginPage() {
       {/* Main Container */}
       <div className="flex flex-col lg:flex-row gap-6 w-full max-w-[90rem] z-10 mx-auto flex-1 min-h-0 items-center justify-between">
 
-        {/* Left Area — headline + interactive nodes */}
+        {/* Left Area - headline + interactive nodes */}
         <div className="hidden lg:flex relative flex-col justify-center items-start flex-1 w-full lg:w-[55%] h-full lg:pl-16 pt-2 lg:pt-8 pointer-events-none">
 
           <div className="relative z-10 flex flex-col w-full max-w-2xl shrink-0 text-left mt-2 lg:mt-4 pointer-events-auto">
@@ -108,7 +108,7 @@ export default function LoginPage() {
               className="text-base lg:text-[1.1rem] text-muted-foreground font-medium max-w-screen-sm mb-2 leading-relaxed mx-auto lg:mx-0 opacity-90"
             >
               Automate Instagram comment replies and DMs through your own Meta app, on your own
-              infrastructure — free, open source, and built to respect every Instagram API rule.
+              infrastructure - free, open source, and built to respect every Instagram API rule.
               Drag the nodes to interact.
             </motion.p>
           </div>
@@ -124,7 +124,7 @@ export default function LoginPage() {
 
         </div>
 
-        {/* Right Area — auth form */}
+        {/* Right Area - auth form */}
         <div className="flex w-full lg:w-1/2 max-w-[460px] flex-col justify-center items-center lg:items-end relative h-full shrink-0 lg:pr-12 pointer-events-none">
 
           <div className="absolute inset-0 pointer-events-none items-center justify-center lg:justify-end opacity-80 mix-blend-multiply dark:mix-blend-screen z-20 hidden lg:flex">

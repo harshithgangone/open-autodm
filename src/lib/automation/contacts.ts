@@ -1,5 +1,5 @@
 /**
- * Contacts — the automation-captured audience list.
+ * Contacts - the automation-captured audience list.
  *
  * A contact is every unique audience member who triggered an automation
  * (comment / DM keyword / story reply / button tap). Written fire-and-forget

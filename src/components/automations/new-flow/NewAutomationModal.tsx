@@ -158,7 +158,7 @@ export function NewAutomationModal({ isOpen, onClose, editAutomation }: NewAutom
             updateData({ type, name });
             setStep(1);
         } else {
-            // DM / story triggers have no post target — straight to configure
+            // DM / story triggers have no post target - straight to configure
             updateData({ type, name, postId: "all", postThumbnailUrl: null, postCaption: "" });
             setStep(2);
         }
@@ -266,7 +266,7 @@ export function NewAutomationModal({ isOpen, onClose, editAutomation }: NewAutom
 
     const stepTitle = step === 0 ? "New automation"
         : step === 1 ? "Choose a post"
-        : isEditMode ? `Edit — ${flowData.name}` : flowData.name || "Configure";
+        : isEditMode ? `Edit - ${flowData.name}` : flowData.name || "Configure";
 
     return (
         <AnimatePresence>
@@ -289,7 +289,7 @@ export function NewAutomationModal({ isOpen, onClose, editAutomation }: NewAutom
                         transition={{ type: "spring", damping: 30, stiffness: 300 }}
                         className="relative w-full h-full max-w-[96vw] lg:max-w-6xl max-h-[92vh] bg-background border border-border rounded-xl shadow-2xl flex flex-col overflow-hidden z-10"
                     >
-                        {/* The warm thread — top edge */}
+                        {/* The warm thread - top edge */}
                         <div className="h-[2px] w-full ig-thread shrink-0" />
 
                         {/* Header */}

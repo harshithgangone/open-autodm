@@ -1,5 +1,5 @@
 /**
- * Debug event logger — powers the live debug panel on the Automations page.
+ * Debug event logger - powers the live debug panel on the Automations page.
  *
  * Fire-and-forget writes to the debug_events table. Never blocks or breaks
  * the automation flow; failures are swallowed after a console note.

@@ -21,6 +21,6 @@ export function useContacts() {
     queryKey: ['contacts'],
     queryFn: () => apiClient<{ contacts: ContactFromDB[] }>('/contacts').then((r) => r.contacts),
     staleTime: 30 * 1000,
-    refetchInterval: 60 * 1000, // contacts grow as automations fire — keep fresh
+    refetchInterval: 60 * 1000, // contacts grow as automations fire - keep fresh
   });
 }

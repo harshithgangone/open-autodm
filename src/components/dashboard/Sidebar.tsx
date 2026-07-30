@@ -97,7 +97,7 @@ export function Sidebar() {
                                                 : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                                         )}
                                     >
-                                        {/* Active marker — the warm thread */}
+                                        {/* Active marker - the warm thread */}
                                         {isActive && (
                                             <motion.span
                                                 layoutId="nav-thread"

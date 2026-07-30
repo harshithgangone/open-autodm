@@ -1,5 +1,5 @@
 /**
- * POST /api/instagram/refresh/:accountId — silent long-lived token refresh.
+ * POST /api/instagram/refresh/:accountId - silent long-lived token refresh.
  * Only works while the token is still valid; expired tokens require a full
  * OAuth reconnect.
  */

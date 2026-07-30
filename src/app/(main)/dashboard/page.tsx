@@ -74,7 +74,7 @@ export default function DashboardPage() {
                     <h2 className="text-[14px] font-heading font-semibold text-foreground">Getting started</h2>
                     <p className="text-[13px] text-muted-foreground mt-0.5 mb-4">
                         {allDone
-                            ? "Everything is configured — your automations are live."
+                            ? "Everything is configured - your automations are live."
                             : "Four steps between you and a working automation."}
                     </p>
                     <div className="space-y-1.5">

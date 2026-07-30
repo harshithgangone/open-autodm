@@ -1,16 +1,16 @@
 /**
- * AutoDM job processors — battle-tested logic, adapted
+ * AutoDM job processors - battle-tested logic, adapted
  * for serverless execution with three extra safety layers:
  *
- *  1. Postgres rate limiter — check_and_record_dm_rate_limit RPC, atomic,
+ *  1. Postgres rate limiter - check_and_record_dm_rate_limit RPC, atomic,
  *     180 DMs/hour rolling window per account (20-DM buffer under Meta's 200).
- *  2. Human-like jitter — a randomized 2–5s pause before every send, so
+ *  2. Human-like jitter - a randomized 2-5s pause before every send, so
  *     automated replies never look machine-instant to Instagram.
- *  3. Circuit breaker — if Meta returns a policy/spam block (code 368), the
+ *  3. Circuit breaker - if Meta returns a policy/spam block (code 368), the
  *     entire account is paused for 24h instead of retrying into a ban.
  *
- * processAutoDmJob   — opening DM (comment / dm_reply keyword trigger)
- * processFollowUpDmJob — follow-up after a quick-reply / postback tap
+ * processAutoDmJob   - opening DM (comment / dm_reply keyword trigger)
+ * processFollowUpDmJob - follow-up after a quick-reply / postback tap
  *
  * Control flow contract with the engine:
  *  - return 'done'                 → job completed or intentionally skipped
@@ -90,7 +90,7 @@ async function sendOneResponse(
 /**
  * Best-effort sequential delivery of configured responses for the 1-step flow
  * (no reveal button). Per-response failures are logged and skipped rather than
- * thrown — the opening DM already went out and is dedup-recorded, so a retry
+ * thrown - the opening DM already went out and is dedup-recorded, so a retry
  * could never resend it; losing one response beats losing the whole flow.
  */
 async function deliverResponsesBestEffort(
@@ -133,11 +133,11 @@ const MAX_EVENT_AGE_MS = 24 * 60 * 60 * 1000;
 /** Hourly DM cap per account (Meta hard limit is 200; 20-DM safety buffer). */
 export const DM_LIMIT_PER_HOUR = 180;
 
-/** Randomized pre-send delay — automation that behaves like a human. */
+/** Randomized pre-send delay - automation that behaves like a human. */
 const JITTER_MIN_MS = 2000;
 const JITTER_MAX_MS = 5000;
 
-/** Thrown when the hourly window is full — engine reschedules, no attempt counted. */
+/** Thrown when the hourly window is full - engine reschedules, no attempt counted. */
 export class RateLimitDelay extends Error {
   constructor(public readonly retryAfterMs: number, public readonly currentCount: number) {
     super(`Rate limit reached (${currentCount}/${DM_LIMIT_PER_HOUR}/h)`);
@@ -145,7 +145,7 @@ export class RateLimitDelay extends Error {
   }
 }
 
-/** Thrown when the account's circuit breaker is open — engine delays the job. */
+/** Thrown when the account's circuit breaker is open - engine delays the job. */
 export class AccountOnPause extends Error {
   constructor(public readonly resumeAtMs: number) {
     super('Account is paused by the safety circuit breaker');
@@ -164,18 +164,18 @@ async function checkRateLimit(db: SupabaseClient, accountId: string): Promise<vo
     p_limit: DM_LIMIT_PER_HOUR,
   });
   if (error) {
-    // Fail open with a warning — better to send than silently drop on a DB blip
-    logger.error({ err: error, accountId }, 'Rate limiter RPC error — allowing send');
+    // Fail open with a warning - better to send than silently drop on a DB blip
+    logger.error({ err: error, accountId }, 'Rate limiter RPC error - allowing send');
     return;
   }
   const row = (data as Array<{ allowed: boolean; current_count: number; retry_after_seconds: number }> | null)?.[0];
   if (row && !row.allowed) {
     debugLog('worker', 'warn', 'rate_limit_check', 'skipped',
-      `Rate limit reached (${row.current_count}/${DM_LIMIT_PER_HOUR}/h) — delaying ${Math.ceil(row.retry_after_seconds / 60)}min`,
+      `Rate limit reached (${row.current_count}/${DM_LIMIT_PER_HOUR}/h) - delaying ${Math.ceil(row.retry_after_seconds / 60)}min`,
       { accountId, currentCount: row.current_count });
     throw new RateLimitDelay(row.retry_after_seconds * 1000, row.current_count);
   }
-  debugLog('worker', 'info', 'rate_limit_check', 'ok', `Rate limit OK — ${row?.current_count ?? '?'}/${DM_LIMIT_PER_HOUR} this hour`, {
+  debugLog('worker', 'info', 'rate_limit_check', 'ok', `Rate limit OK - ${row?.current_count ?? '?'}/${DM_LIMIT_PER_HOUR} this hour`, {
     accountId,
   });
 }
@@ -199,7 +199,7 @@ export async function pauseAccount(accountId: string, reason: string, hours = 24
     .update({ paused_until: until, pause_reason: reason.slice(0, 500) })
     .eq('id', accountId);
   debugLog('worker', 'error', 'circuit_breaker', 'error',
-    `CIRCUIT BREAKER OPENED — account paused for ${hours}h: ${reason}`,
+    `CIRCUIT BREAKER OPENED - account paused for ${hours}h: ${reason}`,
     { accountId, pausedUntil: until });
 }
 
@@ -211,7 +211,7 @@ export async function processAutoDmJob(payload: AutoDmJobPayload, attempt: numbe
   const db = createServiceClient();
   const env = getEnv();
 
-  debugLog('worker', 'info', 'job_started', 'processing', `AutoDM job started — ${payload.triggerType} trigger`, {
+  debugLog('worker', 'info', 'job_started', 'processing', `AutoDM job started - ${payload.triggerType} trigger`, {
     automationId: payload.automationId,
     triggerType: payload.triggerType,
     triggerUserId: payload.triggerUserId,
@@ -222,7 +222,7 @@ export async function processAutoDmJob(payload: AutoDmJobPayload, attempt: numbe
   // ── 1: 24-hour window ────────────────────────────────────────────────────
   const eventAge = Date.now() - payload.triggerTimestamp;
   if (eventAge > MAX_EVENT_AGE_MS) {
-    debugLog('worker', 'warn', 'window_check', 'skipped', `Event ${Math.round(eventAge / 3600000)}h old — outside 24h DM window`, {
+    debugLog('worker', 'warn', 'window_check', 'skipped', `Event ${Math.round(eventAge / 3600000)}h old - outside 24h DM window`, {
       ageHours: Math.round(eventAge / 3600000),
     });
     await markJobStatus(db, payload, 'skipped', 'Event outside 24-hour DM window');
@@ -288,7 +288,7 @@ export async function processAutoDmJob(payload: AutoDmJobPayload, attempt: numbe
   try {
     accessToken = decrypt(igAccount.access_token_encrypted, env.TOKEN_ENCRYPTION_KEY);
   } catch {
-    debugLog('worker', 'error', 'token_decrypt', 'error', 'Token decryption failed — TOKEN_ENCRYPTION_KEY mismatch?', {});
+    debugLog('worker', 'error', 'token_decrypt', 'error', 'Token decryption failed - TOKEN_ENCRYPTION_KEY mismatch?', {});
     throw new Error('Token decryption failed');
   }
 
@@ -326,11 +326,11 @@ export async function processAutoDmJob(payload: AutoDmJobPayload, attempt: numbe
 
   // ── 8: Compose + send the opening DM ─────────────────────────────────────
   if (!automation.dm_opening_message_enabled || !automation.dm_opening_message.trim()) {
-    // Opening message is off — the FIRST response becomes the initial DM.
+    // Opening message is off - the FIRST response becomes the initial DM.
     const responses = automation.dm_responses ?? [];
     const firstResponse = responses.find((r) => r.content?.trim() || r.type === 'card');
     if (!firstResponse) {
-      debugLog('worker', 'info', 'opening_dm', 'skipped', 'Opening DM disabled and no responses configured — nothing to send', {});
+      debugLog('worker', 'info', 'opening_dm', 'skipped', 'Opening DM disabled and no responses configured - nothing to send', {});
       await markJobStatus(db, payload, 'skipped', 'DM disabled');
       return;
     }
@@ -341,7 +341,7 @@ export async function processAutoDmJob(payload: AutoDmJobPayload, attempt: numbe
         ? { commentId: payload.triggerEventId }
         : { id: payload.triggerUserId };
 
-    debugLog('worker', 'info', 'opening_dm', 'processing', 'Opening message off — sending first response directly', {
+    debugLog('worker', 'info', 'opening_dm', 'processing', 'Opening message off - sending first response directly', {
       recipientId: payload.triggerUserId,
       viaPrivateReply: 'commentId' in directRecipient,
     });
@@ -382,7 +382,7 @@ export async function processAutoDmJob(payload: AutoDmJobPayload, attempt: numbe
   let quickReplyPayload: string | undefined;
 
   if (hasQuickReply) {
-    // Session row FIRST — its ID is the routing key embedded in the button payload.
+    // Session row FIRST - its ID is the routing key embedded in the button payload.
     const expiresAt = new Date(Date.now() + MAX_EVENT_AGE_MS);
     const { data: session, error: sessionError } = await db
       .from('automation_sessions')
@@ -403,21 +403,21 @@ export async function processAutoDmJob(payload: AutoDmJobPayload, attempt: numbe
         await markJobStatus(db, payload, 'skipped', 'Session already active');
         return;
       }
-      logger.warn({ err: sessionError }, 'Session insert failed — degrading to plain DM');
-      debugLog('worker', 'warn', 'session_create', 'error', 'Session insert failed — sending plain DM without button', {
+      logger.warn({ err: sessionError }, 'Session insert failed - degrading to plain DM');
+      debugLog('worker', 'warn', 'session_create', 'error', 'Session insert failed - sending plain DM without button', {
         error: sessionError.message,
       });
     } else {
       sessionId = session.id as string;
       quickReplyPayload = `SESSION_${sessionId}_STEP_1`;
-      debugLog('worker', 'info', 'session_create', 'ok', `Session created — id=${sessionId}`, { sessionId });
+      debugLog('worker', 'info', 'session_create', 'ok', `Session created - id=${sessionId}`, { sessionId });
     }
   }
 
   const messageText = renderTemplate(automation.dm_opening_message.trim(), payload.triggerUsername);
   const openingLink = automation.dm_opening_message_button_link?.trim();
 
-  // Comment triggers go out as PRIVATE REPLIES (recipient: comment_id) —
+  // Comment triggers go out as PRIVATE REPLIES (recipient: comment_id) -
   // Meta's purpose-built comment-to-DM channel: separate 750/h allowance,
   // valid 7 days after the comment, more deliverable than general messaging.
   const recipient: DmRecipient =
@@ -455,7 +455,7 @@ export async function processAutoDmJob(payload: AutoDmJobPayload, attempt: numbe
         );
       } catch (buttonErr) {
         if (!shouldFallBackToInlineLink(buttonErr)) throw buttonErr;
-        debugLog('worker', 'warn', 'opening_dm', 'processing', 'Link button rejected — falling back to inline link', {});
+        debugLog('worker', 'warn', 'opening_dm', 'processing', 'Link button rejected - falling back to inline link', {});
         messageId = await sendInstagramDm(
           payload.igAccountIgsid,
           recipient,
@@ -467,7 +467,7 @@ export async function processAutoDmJob(payload: AutoDmJobPayload, attempt: numbe
       messageId = await sendInstagramDm(payload.igAccountIgsid, recipient, messageText, accessToken);
     }
   } catch (err) {
-    // Orphaned session cleanup on hard failures — the engine classifies the error
+    // Orphaned session cleanup on hard failures - the engine classifies the error
     if (sessionId) {
       await db.from('automation_sessions').delete().eq('id', sessionId);
     }
@@ -506,13 +506,13 @@ export async function processAutoDmJob(payload: AutoDmJobPayload, attempt: numbe
   // no tap coming, so deliver the configured responses right away.
   if (!sessionId && automation.dm_responses?.length) {
     debugLog('worker', 'info', 'responses_send', 'processing',
-      `No reveal button — delivering ${automation.dm_responses.length} response(s) immediately`, {
+      `No reveal button - delivering ${automation.dm_responses.length} response(s) immediately`, {
         responseCount: automation.dm_responses.length,
       });
     await deliverResponsesBestEffort(payload, automation.dm_responses, accessToken);
   }
 
-  // Contacts: DM/story webhooks don't carry a username — enrich it (and the
+  // Contacts: DM/story webhooks don't carry a username - enrich it (and the
   // follow flag) from the profile API now that they've messaged us.
   if (payload.triggerType !== 'comment') {
     void getAudienceProfile(payload.triggerUserId, accessToken).then((p) => {
@@ -542,14 +542,14 @@ export async function processFollowUpDmJob(payload: AutoDmJobPayload): Promise<v
   const db = createServiceClient();
   const env = getEnv();
 
-  debugLog('worker', 'info', 'followup_started', 'processing', `Follow-up job started — step ${payload.sessionStep}`, {
+  debugLog('worker', 'info', 'followup_started', 'processing', `Follow-up job started - step ${payload.sessionStep}`, {
     sessionId: payload.sessionId ?? null,
     sessionStep: payload.sessionStep ?? null,
     triggerUserId: payload.triggerUserId,
   });
 
   if (!payload.sessionId) {
-    debugLog('worker', 'warn', 'followup_started', 'error', 'Follow-up job has no sessionId — dropping', {});
+    debugLog('worker', 'warn', 'followup_started', 'error', 'Follow-up job has no sessionId - dropping', {});
     return;
   }
 
@@ -577,7 +577,7 @@ export async function processFollowUpDmJob(payload: AutoDmJobPayload): Promise<v
   const expectedStep = session.current_step as number;
   if (payload.sessionStep !== undefined && payload.sessionStep !== expectedStep) {
     debugLog('worker', 'warn', 'session_verify', 'skipped',
-      `Step mismatch: tap says ${payload.sessionStep}, session expects ${expectedStep} — stale button tap`, {});
+      `Step mismatch: tap says ${payload.sessionStep}, session expects ${expectedStep} - stale button tap`, {});
     return;
   }
 
@@ -589,7 +589,7 @@ export async function processFollowUpDmJob(payload: AutoDmJobPayload): Promise<v
     .eq('is_active', true)
     .single<AutomationRow>();
   if (!automation) {
-    debugLog('worker', 'warn', 'automation_fetch', 'skipped', `Automation ${payload.automationId} inactive — completing session`, {});
+    debugLog('worker', 'warn', 'automation_fetch', 'skipped', `Automation ${payload.automationId} inactive - completing session`, {});
     await db.from('automation_sessions').update({ completed: true }).eq('id', payload.sessionId);
     return;
   }
@@ -618,11 +618,11 @@ export async function processFollowUpDmJob(payload: AutoDmJobPayload): Promise<v
 
   // ── 3: Ask-to-follow gate (REAL follow check) ────────────────────────────
   // Instagram's User Profile API exposes is_user_follow_business for anyone
-  // who has messaged the account — and a button tap IS a message, so we can
+  // who has messaged the account - and a button tap IS a message, so we can
   // genuinely verify. Flow:
   //   step 1 tap → check: follower? deliver straight away : send ask card, step 2
   //   step 2 tap ("I'm following") → RE-CHECK: follower? deliver : gentle nudge
-  // Unknown check results FAIL OPEN (deliver) — never block a real person
+  // Unknown check results FAIL OPEN (deliver) - never block a real person
   // because Meta's profile endpoint hiccuped.
   if (automation.ask_to_follow_enabled && expectedStep === 1) {
     const audienceProfile = await getAudienceProfile(payload.triggerUserId, accessToken);
@@ -649,7 +649,7 @@ export async function processFollowUpDmJob(payload: AutoDmJobPayload): Promise<v
         .update({ current_step: 2, last_activity_at: new Date().toISOString() })
         .eq('id', payload.sessionId);
 
-      debugLog('worker', 'info', 'ask_to_follow_dm', 'ok', 'Not a follower — ask-to-follow card sent, session at step 2', {
+      debugLog('worker', 'info', 'ask_to_follow_dm', 'ok', 'Not a follower - ask-to-follow card sent, session at step 2', {
         sessionId: payload.sessionId,
       });
       return;
@@ -657,8 +657,8 @@ export async function processFollowUpDmJob(payload: AutoDmJobPayload): Promise<v
 
     debugLog('worker', 'info', 'follow_check', 'ok',
       follows === true
-        ? 'Audience member already follows — skipping ask-to-follow, delivering content'
-        : 'Follow status unknown — failing open, delivering content',
+        ? 'Audience member already follows - skipping ask-to-follow, delivering content'
+        : 'Follow status unknown - failing open, delivering content',
       { sessionId: payload.sessionId, triggerUserId: payload.triggerUserId });
     // Fall through to responses
   }
@@ -674,7 +674,7 @@ export async function processFollowUpDmJob(payload: AutoDmJobPayload): Promise<v
     });
 
     if (follows === false) {
-      // Still not following — nudge and keep the session at step 2 so the
+      // Still not following - nudge and keep the session at step 2 so the
       // card's buttons stay live and they can tap "I'm following" again.
       await sendInstagramDm(
         payload.igAccountIgsid,
@@ -687,7 +687,7 @@ export async function processFollowUpDmJob(payload: AutoDmJobPayload): Promise<v
         .update({ last_activity_at: new Date().toISOString() })
         .eq('id', payload.sessionId);
 
-      debugLog('worker', 'info', 'follow_check', 'skipped', 'Re-check: still not following — nudge sent, session stays at step 2', {
+      debugLog('worker', 'info', 'follow_check', 'skipped', 'Re-check: still not following - nudge sent, session stays at step 2', {
         sessionId: payload.sessionId,
         triggerUserId: payload.triggerUserId,
       });
@@ -695,14 +695,14 @@ export async function processFollowUpDmJob(payload: AutoDmJobPayload): Promise<v
     }
 
     debugLog('worker', 'info', 'follow_check', 'ok',
-      follows === true ? 'Re-check passed — audience member now follows, delivering content' : 'Re-check unknown — failing open, delivering content',
+      follows === true ? 'Re-check passed - audience member now follows, delivering content' : 'Re-check unknown - failing open, delivering content',
       { sessionId: payload.sessionId });
     // Fall through to responses
   }
 
   // ── 4: Deliver dm_responses sequentially ─────────────────────────────────
   if (!automation.dm_responses?.length) {
-    debugLog('worker', 'warn', 'responses_send', 'skipped', 'Automation has 0 dm_responses — session completed with no content', {
+    debugLog('worker', 'warn', 'responses_send', 'skipped', 'Automation has 0 dm_responses - session completed with no content', {
       hint: 'Add at least one response (text or card) in the automation configuration',
     });
     await db.from('automation_sessions').update({ completed: true, last_activity_at: new Date().toISOString() }).eq('id', payload.sessionId);
@@ -747,7 +747,7 @@ export async function processFollowUpDmJob(payload: AutoDmJobPayload): Promise<v
           lastMessageText = messageText;
         } catch (buttonErr) {
           if (!shouldFallBackToInlineLink(buttonErr)) throw buttonErr;
-          debugLog('worker', 'warn', 'responses_send', 'processing', 'Link button rejected — falling back to inline link', {});
+          debugLog('worker', 'warn', 'responses_send', 'processing', 'Link button rejected - falling back to inline link', {});
           const fallback = `${messageText}\n\n${buttonTitle}: ${link}`;
           await sendInstagramDm(payload.igAccountIgsid, { id: payload.triggerUserId }, fallback, accessToken);
           lastMessageText = fallback;

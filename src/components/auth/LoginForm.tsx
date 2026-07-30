@@ -7,7 +7,7 @@ import { createBrowserClient } from "@/lib/supabase";
 import { LogoMark } from "@/components/ui/Logo";
 
 /**
- * Sign-in only — there is deliberately NO registration flow.
+ * Sign-in only - there is deliberately NO registration flow.
  * Accounts are created by the instance owner in the Supabase dashboard
  * (Authentication → Users → Add user), with public signups disabled.
  */
@@ -98,7 +98,7 @@ export function LoginForm() {
 
                 <div className="mt-6 pt-5 border-t border-border">
                     <p className="text-[11.5px] text-muted-foreground leading-relaxed">
-                        No account? Access is invite-only — the instance owner creates users in the
+                        No account? Access is invite-only - the instance owner creates users in the
                         Supabase dashboard <span className="text-foreground/70 font-medium">(Authentication → Users → Add user)</span>.
                     </p>
                 </div>

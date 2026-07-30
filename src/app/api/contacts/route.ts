@@ -1,5 +1,5 @@
 /**
- * GET /api/contacts — the automation-captured audience list.
+ * GET /api/contacts - the automation-captured audience list.
  * Contacts are scoped to the authenticated user's connected accounts.
  */
 

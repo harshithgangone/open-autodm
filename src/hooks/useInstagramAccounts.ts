@@ -25,7 +25,7 @@ export function useInstagramAccounts() {
   return useQuery({
     queryKey: ['instagram-accounts'],
     queryFn: () => apiClient<{ accounts: InstagramAccount[] }>('/instagram/accounts').then((r) => r.accounts),
-    staleTime: 60 * 1000, // 1 minute — refetch frequently to catch revoked access
+    staleTime: 60 * 1000, // 1 minute - refetch frequently to catch revoked access
     refetchOnWindowFocus: true,
   });
 }

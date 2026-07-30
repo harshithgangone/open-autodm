@@ -1,5 +1,5 @@
 /**
- * DELETE /api/instagram/disconnect/:accountId — remove a connected account.
+ * DELETE /api/instagram/disconnect/:accountId - remove a connected account.
  * Cascades to automations, jobs, logs, and sessions via FK ON DELETE CASCADE.
  */
 

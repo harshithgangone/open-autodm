@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Setup Wizard — from fresh deployment to verified Meta webhook, five steps:
+ * Setup Wizard - from fresh deployment to verified Meta webhook, five steps:
  *  1. Create a Meta app
  *  2. Save Instagram app credentials (stored encrypted)
  *  3. Wire the Meta portal (webhook + login redirect)
@@ -151,14 +151,14 @@ export default function SetupPage() {
                     <>Go to <a href="https://developers.facebook.com/apps" target="_blank" rel="noopener noreferrer" className="text-primary font-medium underline underline-offset-2">developers.facebook.com/apps</a> and click <b>Create App</b>.</>,
                     <>Use case <b>Other</b> → app type <b>Business</b>.</>,
                     <>In the app dashboard: <b>Instagram → Set up</b> (adds &ldquo;Instagram API with Instagram Login&rdquo;).</>,
-                    <>Go to <b>Instagram → API setup with Instagram login → 3. Set up Instagram business login</b> and copy the <b>Instagram app ID</b> and <b>Instagram app secret</b> shown there. Not the pair under App settings → Basic — those belong to the parent Meta app and Instagram login rejects them with &ldquo;Invalid platform app&rdquo;.</>,
+                    <>Go to <b>Instagram → API setup with Instagram login → 3. Set up Instagram business login</b> and copy the <b>Instagram app ID</b> and <b>Instagram app secret</b> shown there. Not the pair under App settings → Basic - those belong to the parent Meta app and Instagram login rejects them with &ldquo;Invalid platform app&rdquo;.</>,
                     <>Your Instagram must be a <b>Business or Creator</b> account (switch in the app: Settings → Account type).</>,
                 ]} />
                 <div className="mt-4 flex items-start gap-2 text-[12px] text-muted-foreground bg-muted/50 rounded-lg px-3 py-2.5">
                     <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-500" />
                     <span>
-                        Your app starts in <b>Development mode</b> — perfect for building and testing. In dev mode, automations
-                        work for accounts that hold a <b>role on your app</b> (you + testers — see Step 5). To let the
+                        Your app starts in <b>Development mode</b> - perfect for building and testing. In dev mode, automations
+                        work for accounts that hold a <b>role on your app</b> (you + testers - see Step 5). To let the
                         general public trigger them, submit the free Meta <b>App Review</b> once testing passes.
                     </span>
                 </div>
@@ -225,12 +225,12 @@ export default function SetupPage() {
             {/* Step 3 */}
             <StepCard step={3} title="Wire up the Meta portal" icon={Webhook}>
                 {!configured && !justSaved ? (
-                    <p className="text-[13px] text-muted-foreground">Complete Step 2 first — your webhook verify token is generated when credentials are saved.</p>
+                    <p className="text-[13px] text-muted-foreground">Complete Step 2 first - your webhook verify token is generated when credentials are saved.</p>
                 ) : (
                     <div className="space-y-5">
                         <div>
                             <p className="text-[13px] font-medium text-foreground mb-2.5">
-                                A. Webhooks — <span className="text-muted-foreground font-normal">Instagram → API setup with Instagram login → 2. Configure webhooks</span>
+                                A. Webhooks - <span className="text-muted-foreground font-normal">Instagram → API setup with Instagram login → 2. Configure webhooks</span>
                             </p>
                             <div className="space-y-2.5">
                                 <CopyField label="Callback URL" value={setup?.webhookUrl ?? ""} />
@@ -243,7 +243,7 @@ export default function SetupPage() {
                         <div className="h-px bg-border" />
                         <div>
                             <p className="text-[13px] font-medium text-foreground mb-2.5">
-                                B. Business login — <span className="text-muted-foreground font-normal">3. Set up Instagram business login → Business login settings</span>
+                                B. Business login - <span className="text-muted-foreground font-normal">3. Set up Instagram business login → Business login settings</span>
                             </p>
                             <CopyField label="OAuth redirect URI" value={setup?.oauthRedirectUri ?? ""} />
                             <p className="text-[11px] text-muted-foreground mt-2">
@@ -257,7 +257,7 @@ export default function SetupPage() {
             {/* Step 4 */}
             <StepCard step={4} title="Enable the background engine" icon={Clock3}>
                 <p className="text-[13px] text-muted-foreground mb-3 leading-relaxed">
-                    Most DMs send instantly from the webhook. This cron delivers the rest — rate-limited overflow,
+                    Most DMs send instantly from the webhook. This cron delivers the rest - rate-limited overflow,
                     retries, and automatic token refresh. In <b>Supabase → SQL Editor</b>, replace{" "}
                     <code className="font-mono text-[11px] bg-muted px-1 rounded">YOUR_CRON_SECRET</code> with your
                     deployment&apos;s CRON_SECRET and run:
@@ -275,7 +275,7 @@ export default function SetupPage() {
                     </button>
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-2">
-                    Verify with <code className="font-mono bg-muted px-1 rounded">select * from cron.job;</code> — you should see <code className="font-mono bg-muted px-1 rounded">open-autodm-process-jobs</code>.
+                    Verify with <code className="font-mono bg-muted px-1 rounded">select * from cron.job;</code> - you should see <code className="font-mono bg-muted px-1 rounded">open-autodm-process-jobs</code>.
                 </p>
             </StepCard>
 
@@ -283,7 +283,7 @@ export default function SetupPage() {
             <StepCard step={5} title="Who can trigger it" icon={Users}>
                 <div className="space-y-4 text-[13px] text-foreground/90 leading-relaxed">
                     <p>
-                        In <b>Development mode</b>, Instagram only delivers events for accounts holding a role on your app —
+                        In <b>Development mode</b>, Instagram only delivers events for accounts holding a role on your app -
                         on <b>both sides</b>: the account you connect <i>and</i> the audience accounts whose comments, DMs,
                         or story replies trigger automations. A stranger&apos;s comment produces no webhook at all.
                     </p>
@@ -299,7 +299,7 @@ export default function SetupPage() {
                         <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-500" />
                         <span>
                             <b>Going public:</b> to fire on comments from anyone, request <b>Advanced Access</b> via Meta&apos;s free
-                            App Review — upload a short screencast of your working flow. Typically approved in days; nothing in
+                            App Review - upload a short screencast of your working flow. Typically approved in days; nothing in
                             this app changes afterwards.
                         </span>
                     </div>
@@ -314,7 +314,7 @@ export default function SetupPage() {
                 >
                     <CheckCircle2 className="w-4.5 h-4.5 w-[18px] h-[18px] text-secondary shrink-0 mt-0.5" />
                     <div>
-                        <p className="text-[13px] font-semibold text-foreground">Setup complete — connect Instagram next</p>
+                        <p className="text-[13px] font-semibold text-foreground">Setup complete - connect Instagram next</p>
                         <p className="text-[13px] text-muted-foreground mt-0.5">
                             Go to <a href="/settings" className="text-primary font-medium underline underline-offset-2">Settings</a> and
                             click <b>Connect</b>, using the Instagram account that owns (or tests) your Meta app.

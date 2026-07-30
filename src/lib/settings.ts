@@ -1,5 +1,5 @@
 /**
- * App settings service — the self-hoster's Meta app credentials.
+ * App settings service - the self-hoster's Meta app credentials.
  *
  * Credentials are entered once through the Setup Wizard and stored in the
  * single-row app_settings table. The App Secret is AES-256-GCM encrypted with
@@ -15,10 +15,10 @@ import { getEnv } from '@/lib/env';
 
 export interface MetaSettings {
   metaAppId: string;
-  metaAppSecret: string; // decrypted — never log
+  metaAppSecret: string; // decrypted - never log
   /**
    * Optional Facebook App Secret. Meta signs webhooks with the Instagram app
-   * secret for IG-Login apps but the Facebook app secret for FB-Login apps —
+   * secret for IG-Login apps but the Facebook app secret for FB-Login apps -
    * verification accepts a signature matching either.
    */
   metaFbAppSecret: string | null;
@@ -62,7 +62,7 @@ export async function getMetaSettings(): Promise<MetaSettings | null> {
       fbSecret = decrypt(data.meta_fb_app_secret_encrypted, env.TOKEN_ENCRYPTION_KEY);
     }
   } catch {
-    // TOKEN_ENCRYPTION_KEY changed after setup — treat as not configured
+    // TOKEN_ENCRYPTION_KEY changed after setup - treat as not configured
     cache = { value: null, at: Date.now() };
     return null;
   }

@@ -1,5 +1,5 @@
 /**
- * open-autoDM logo — a chat bubble with a lightning bolt, in the
+ * open-autoDM logo - a chat bubble with a lightning bolt, in the
  * Instagram-sunset gradient. Used in the sidebar, login page, and favicon.
  */
 

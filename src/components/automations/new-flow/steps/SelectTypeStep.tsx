@@ -24,7 +24,7 @@ export function SelectTypeStep({ onSelect, selectedType }: SelectTypeStepProps) 
                         What starts this automation?
                     </h2>
                     <p className="text-[13px] text-muted-foreground max-w-md mx-auto">
-                        Pick a trigger — you&apos;ll configure keywords and replies next.
+                        Pick a trigger - you&apos;ll configure keywords and replies next.
                     </p>
                 </div>
 

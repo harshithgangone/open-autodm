@@ -2,12 +2,12 @@
  * Meta Graph API client for Instagram messaging.
  *
  * Battle-tested against the live Instagram API. Key facts this
- * module encodes (learned the hard way — do not "simplify" them away):
+ * module encodes (learned the hard way - do not "simplify" them away):
  *
  *  - Instagram Business Login tokens call graph.instagram.com, NOT graph.facebook.com.
  *  - Button templates (postback buttons) work on graph.instagram.com with
- *    Instagram Login user access tokens — used for the 2-step quick-reply flow.
- *  - Postback payloads carry "SESSION_{uuid}_STEP_{n}" — routing is ALWAYS by
+ *    Instagram Login user access tokens - used for the 2-step quick-reply flow.
+ *  - Postback payloads carry "SESSION_{uuid}_STEP_{n}" - routing is ALWAYS by
  *    payload, never by visible button text.
  *  - Access tokens are decrypted at call time and never logged.
  */
@@ -37,7 +37,7 @@ interface MetaErrorResponse {
 }
 
 export interface QuickReply {
-  /** Visible button label — Meta limit: 20 characters */
+  /** Visible button label - Meta limit: 20 characters */
   title: string;
   /** Hidden payload: "SESSION_{uuid}_STEP_{n}". The routing key. */
   payload: string;
@@ -121,12 +121,12 @@ export async function sendInstagramDm(
       'DM send failed'
     );
     debugLog('instagram', 'error', 'dm_send_failed', 'error',
-      `DM to ${to} FAILED — Meta error ${data.error?.code}: ${data.error?.message ?? 'unknown'}`,
+      `DM to ${to} FAILED - Meta error ${data.error?.code}: ${data.error?.message ?? 'unknown'}`,
       { igAccountIgsid, recipient: to, httpStatus: res.status, metaErrorCode: data.error?.code, fbtrace_id: data.error?.fbtrace_id });
     throwFromMetaResponse('sendInstagramDm', res.status, data);
   }
 
-  debugLog('instagram', 'info', 'dm_sent', 'ok', `DM sent to ${to} — messageId=${data.message_id}`, {
+  debugLog('instagram', 'info', 'dm_sent', 'ok', `DM sent to ${to} - messageId=${data.message_id}`, {
     igAccountIgsid,
     recipient: to,
     messageId: data.message_id,
@@ -135,7 +135,7 @@ export async function sendInstagramDm(
 }
 
 /**
- * Sends a DM as a button template with a single tappable web_url LINK button —
+ * Sends a DM as a button template with a single tappable web_url LINK button -
  * far cleaner than pasting a raw URL into the text.
  *
  * IMPORTANT (learned from production tools): Meta occasionally rejects button
@@ -180,12 +180,12 @@ export async function sendInstagramLinkButtonDm(
   const data = (await res.json()) as MetaSendMessageResponse & MetaErrorResponse;
   if (!res.ok) {
     debugLog('instagram', 'warn', 'link_button_dm_failed', 'error',
-      `Link-button DM to ${to} rejected — ${data.error?.code}: ${data.error?.message ?? 'unknown'} (caller falls back to inline link)`,
+      `Link-button DM to ${to} rejected - ${data.error?.code}: ${data.error?.message ?? 'unknown'} (caller falls back to inline link)`,
       { igAccountIgsid, recipient: to, httpStatus: res.status, metaErrorCode: data.error?.code });
     throwFromMetaResponse('sendInstagramLinkButtonDm', res.status, data);
   }
 
-  debugLog('instagram', 'info', 'link_button_dm_sent', 'ok', `Link-button DM sent to ${to} — messageId=${data.message_id}`, {
+  debugLog('instagram', 'info', 'link_button_dm_sent', 'ok', `Link-button DM sent to ${to} - messageId=${data.message_id}`, {
     igAccountIgsid,
     recipient: to,
     messageId: data.message_id,
@@ -193,7 +193,7 @@ export async function sendInstagramLinkButtonDm(
   return data.message_id;
 }
 
-/** Posts a public reply to a comment. Non-fatal — DM still sends on failure. */
+/** Posts a public reply to a comment. Non-fatal - DM still sends on failure. */
 export async function replyToComment(commentId: string, replyText: string, accessToken: string): Promise<void> {
   debugLog('instagram', 'info', 'comment_reply_attempt', 'processing', `Replying to comment ${commentId}`, {
     commentId,
@@ -208,9 +208,9 @@ export async function replyToComment(commentId: string, replyText: string, acces
 
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as MetaErrorResponse;
-    logger.warn({ commentId, status: res.status, metaCode: body.error?.code }, 'Comment reply failed — continuing');
+    logger.warn({ commentId, status: res.status, metaCode: body.error?.code }, 'Comment reply failed - continuing');
     debugLog('instagram', 'warn', 'comment_reply_failed', 'error',
-      `Comment reply to ${commentId} failed — ${body.error?.code}: ${body.error?.message ?? 'unknown'} (DM will still send)`,
+      `Comment reply to ${commentId} failed - ${body.error?.code}: ${body.error?.message ?? 'unknown'} (DM will still send)`,
       { commentId, httpStatus: res.status });
   } else {
     debugLog('instagram', 'info', 'comment_reply_sent', 'ok', `Public reply posted to comment ${commentId}`, { commentId });
@@ -271,7 +271,7 @@ export async function sendAskToFollowDm(
   const data = (await res.json()) as MetaSendMessageResponse & MetaErrorResponse;
   if (!res.ok) {
     debugLog('instagram', 'error', 'ask_follow_dm_failed', 'error',
-      `Ask-to-follow DM to ${recipientIgsid} FAILED — ${data.error?.code}: ${data.error?.message ?? 'unknown'}`,
+      `Ask-to-follow DM to ${recipientIgsid} FAILED - ${data.error?.code}: ${data.error?.message ?? 'unknown'}`,
       { igAccountIgsid, recipientIgsid, httpStatus: res.status });
     throwFromMetaResponse('sendAskToFollowDm', res.status, data);
   }
@@ -315,7 +315,7 @@ export async function sendInstagramCardDm(
   const data = (await res.json()) as MetaSendMessageResponse & MetaErrorResponse;
   if (!res.ok) {
     debugLog('instagram', 'error', 'card_dm_failed', 'error',
-      `Card DM to ${recipientIgsid} FAILED — ${data.error?.code}: ${data.error?.message ?? 'unknown'}`,
+      `Card DM to ${recipientIgsid} FAILED - ${data.error?.code}: ${data.error?.message ?? 'unknown'}`,
       { igAccountIgsid, recipientIgsid, httpStatus: res.status });
     throwFromMetaResponse('sendInstagramCardDm', res.status, data);
   }
@@ -328,9 +328,9 @@ export async function sendInstagramCardDm(
 }
 
 /**
- * Instagram User Profile API — available for any user who has messaged the
+ * Instagram User Profile API - available for any user who has messaged the
  * business (always our case: a button tap IS a message). Exposes username and
- * `is_user_follow_business` — the same follow signal commercial tools use for
+ * `is_user_follow_business` - the same follow signal commercial tools use for
  * "require follow" gates.
  */
 export interface AudienceProfile {
@@ -349,7 +349,7 @@ export async function getAudienceProfile(
     if (!res.ok) {
       const body = (await res.json().catch(() => ({}))) as MetaErrorResponse;
       debugLog('instagram', 'warn', 'profile_fetch_failed', 'error',
-        `Profile fetch for ${audienceIgsid} failed — ${body.error?.code}: ${body.error?.message ?? `HTTP ${res.status}`}`,
+        `Profile fetch for ${audienceIgsid} failed - ${body.error?.code}: ${body.error?.message ?? `HTTP ${res.status}`}`,
         { audienceIgsid, httpStatus: res.status });
       return null;
     }
@@ -367,7 +367,7 @@ export async function getAudienceProfile(
 /**
  * Real follow check. Returns: true = follows · false = does not follow ·
  * null = unknown (API error / field unavailable). Callers must FAIL OPEN on
- * null — never block a legitimate person because the check itself hiccuped.
+ * null - never block a legitimate person because the check itself hiccuped.
  */
 export async function checkUserFollowsBusiness(
   audienceIgsid: string,
@@ -385,7 +385,7 @@ export async function checkUserFollowsBusiness(
 
 /**
  * Subscribes an IG account to webhook fields. Meta requires this per-account
- * call in addition to the app-level webhook URL — without it, NO events fire.
+ * call in addition to the app-level webhook URL - without it, NO events fire.
  */
 export const WEBHOOK_SUBSCRIBED_FIELDS = 'comments,messages,messaging_postbacks,message_reactions,message_edit';
 

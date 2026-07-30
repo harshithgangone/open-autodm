@@ -7,17 +7,17 @@
 **Open-source, self-hosted Instagram comment-to-DM automation.**
 
 Someone comments a keyword on your post → they instantly get your link in their DMs.
-The exact engine behind ManyChat-style "comment *LINK* to get it" funnels — except it's
+The exact engine behind ManyChat-style "comment *LINK* to get it" funnels - except it's
 free, it runs on **your** infrastructure, through **your own** Meta app, and your data
 never touches anyone else's servers.
 
 `Next.js (one deployment)` · `Supabase (DB + auth + queue + cron)` · `Vercel or Cloudflare`
 
-**⭐ Star this repo now** — it takes 2 seconds, helps other creators find a free alternative to
+**⭐ Star this repo now** - it takes 2 seconds, helps other creators find a free alternative to
 $25/month tools, and new features land here regularly. **Watch** the repo to catch them.
 
-> 🛠️ **Don't want to set it up yourself?** I'll deploy the whole system on your own accounts —
-> running at near-zero server cost — for a minimal one-time setup charge, for all your Instagram
+> 🛠️ **Don't want to set it up yourself?** I'll deploy the whole system on your own accounts -
+> running at near-zero server cost - for a minimal one-time setup charge, for all your Instagram
 > accounts. DM me on Instagram: [**@buildwharsha**](https://www.instagram.com/buildwharsha/) 🙂
 
 </div>
@@ -26,36 +26,36 @@ $25/month tools, and new features land here regularly. **Watch** the repo to cat
 
 ## ✨ What it does
 
-- **Comment → DM** — auto-DM anyone who comments a trigger keyword (or any comment) on a specific post or all posts. Sent as Meta **Private Replies** — the purpose-built comment-to-DM channel with its own 750/hour allowance, valid up to 7 days after the comment.
-- **DM keyword auto-replies** — someone DMs you `DIET` → they instantly get the resource you attached to that keyword.
-- **Story reply triggers** — someone replies `DIET` to your story → same thing. Story replies route to their own automations, separate from plain DMs.
-- **Tappable link buttons** — links are delivered as real button-template DMs (a button that opens the URL), with automatic fallback to an inline link if Meta rejects the template for a recipient.
-- **Public comment replies** — replies to the trigger comment with a random line from your list ("Sent! Check your DMs 📬"). Idempotent — a retried job never double-posts.
-- **2-step button flow** — opening DM with a *"Send me the link"* button; content is delivered only after the tap (massively better delivery + engagement).
-- **Ask-to-follow gate** — optionally ask people to follow you before delivering the content (Visit Profile + "I'm following ✅" buttons).
-- **Text + card responses** — plain messages, link buttons, or rich cards with image / subtitle / up to 3 URL buttons.
-- **`{username}` personalization** — greet commenters by their @handle in messages and public replies.
-- **Live debug panel** — watch every webhook → match → send step stream in real time while testing.
+- **Comment → DM** - auto-DM anyone who comments a trigger keyword (or any comment) on a specific post or all posts. Sent as Meta **Private Replies** - the purpose-built comment-to-DM channel with its own 750/hour allowance, valid up to 7 days after the comment.
+- **DM keyword auto-replies** - someone DMs you `DIET` → they instantly get the resource you attached to that keyword.
+- **Story reply triggers** - someone replies `DIET` to your story → same thing. Story replies route to their own automations, separate from plain DMs.
+- **Tappable link buttons** - links are delivered as real button-template DMs (a button that opens the URL), with automatic fallback to an inline link if Meta rejects the template for a recipient.
+- **Public comment replies** - replies to the trigger comment with a random line from your list ("Sent! Check your DMs 📬"). Idempotent - a retried job never double-posts.
+- **2-step button flow** - opening DM with a *"Send me the link"* button; content is delivered only after the tap (massively better delivery + engagement).
+- **Ask-to-follow gate** - optionally ask people to follow you before delivering the content (Visit Profile + "I'm following ✅" buttons).
+- **Text + card responses** - plain messages, link buttons, or rich cards with image / subtitle / up to 3 URL buttons.
+- **`{username}` personalization** - greet commenters by their @handle in messages and public replies.
+- **Live debug panel** - watch every webhook → match → send step stream in real time while testing.
 
 ## 🛡️ Built to keep your Instagram account safe
 
-This isn't a scraper or a browser bot — it uses the **official Instagram API** end-to-end, and the architecture enforces every platform rule:
+This isn't a scraper or a browser bot - it uses the **official Instagram API** end-to-end, and the architecture enforces every platform rule:
 
 | Rule | How it's enforced |
 |---|---|
 | 200 DMs/hour per account (Meta hard limit) | Atomic Postgres rate limiter capped at **180/hour** (rolling window, 20-DM safety buffer for your manual DMs) |
 | 24-hour messaging window | Checked at webhook receipt **and** again before every send |
-| One DM per person per trigger | `UNIQUE` constraints at the database level — duplicates are physically impossible |
-| No bot-like bursts | Randomized 2–5s humanized delay before every send; sends are sequential, never parallel |
+| One DM per person per trigger | `UNIQUE` constraints at the database level - duplicates are physically impossible |
+| No bot-like bursts | Randomized 2-5s humanized delay before every send; sends are sequential, never parallel |
 | Policy blocks (Meta error 368) | **Circuit breaker**: all sends for the account auto-pause for 24h instead of retrying into a ban |
 | Meta-side rate limit errors (4/17/32/613) | Generous 15-minute backoff, no attempt burned |
-| Webhook authenticity | HMAC-SHA256 signature verified over the raw body before *anything* else runs (accepts the Instagram **or** Facebook app-secret signature — Meta uses either depending on app type) |
+| Webhook authenticity | HMAC-SHA256 signature verified over the raw body before *anything* else runs (accepts the Instagram **or** Facebook app-secret signature - Meta uses either depending on app type) |
 | Token safety | Instagram tokens + your App Secret are AES-256-GCM encrypted at rest; auto-refreshed before their 60-day expiry |
 
 **Build and test with zero waiting:** in Development mode your app already delivers real events for the
-accounts on your app (you + testers you add) — so you can fully build, test and run automations within your
+accounts on your app (you + testers you add) - so you can fully build, test and run automations within your
 own circle immediately, no approval needed. When you want the **general public's** comments to trigger your
-automations, submit Meta's free **App Review** once (a short screencast of your working flow — typically
+automations, submit Meta's free **App Review** once (a short screencast of your working flow - typically
 approved in days). The in-app Setup Wizard walks you through both stages.
 
 ## 🏗️ Architecture
@@ -67,7 +67,7 @@ Instagram comment
       │
       ▼
 Meta webhook ──► /api/webhook ── verify HMAC ── 200 OK to Meta (< 1s)
-                                      │ after() — background of same invocation
+                                      │ after() - background of same invocation
                                       ▼
                           match keyword/post ─► job row in Postgres (job_queue)
                                       │
@@ -136,7 +136,7 @@ and a troubleshooting table for every failure mode we've ever hit).
 
 ## 🤝 Contributing
 
-Feature ideas and pull requests are very welcome — open an issue to discuss bigger changes
+Feature ideas and pull requests are very welcome - open an issue to discuss bigger changes
 first, then send a PR. **More features are actively being added; watch the repo to keep up.**
 If you build something cool on top of this, share it in an issue so others can find it.
 
@@ -151,19 +151,19 @@ Starring the repo is free and helps just as much. ⭐
 
 ## 📄 License
 
-MIT — use it, modify it, self-host it for yourself or your clients, commercially or not.
+MIT - use it, modify it, self-host it for yourself or your clients, commercially or not.
 See [LICENSE](LICENSE).
 
 ## ⚠️ Disclaimer
 
-- This software is provided **"as is", without warranty of any kind** — see the LICENSE. The
+- This software is provided **"as is", without warranty of any kind** - see the LICENSE. The
   author is **not liable** for anything that happens through your use of it, including (but not
   limited to) actions Meta or Instagram takes on your account or app.
 - open-autoDM talks to Instagram exclusively through **Meta's official APIs** using **your own**
   Meta developer app and credentials. It never scrapes, never automates a browser, and never
   asks for your Instagram password.
 - Built-in safety rails (conservative rate limits, humanized delays, dedup, circuit breaker)
-  are designed to keep you inside Meta's published policies — but **you** are responsible for
+  are designed to keep you inside Meta's published policies - but **you** are responsible for
   how you use automation and for your own compliance with Instagram's Terms of Use and Meta's
   Platform Policies.
 - This project is not affiliated with, endorsed by, or sponsored by Meta, Instagram, or any
@@ -173,6 +173,6 @@ See [LICENSE](LICENSE).
 
 <div align="center">
 
-Built with ❤️ by <a href="https://www.instagram.com/buildwharsha/"><b>@buildwharsha</b></a> — say hi on Instagram
+Built with ❤️ by <a href="https://www.instagram.com/buildwharsha/"><b>@buildwharsha</b></a> - say hi on Instagram
 
 </div>

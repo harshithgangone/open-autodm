@@ -38,7 +38,7 @@ export class NonRetryableMetaError extends MetaApiError {
   }
 }
 
-/** Meta blocked the account for policy reasons — pause the whole account. */
+/** Meta blocked the account for policy reasons - pause the whole account. */
 export class AccountPausedMetaError extends MetaApiError {
   constructor(message: string, code: number | undefined, subcode: number | undefined) {
     super(message, code, subcode);

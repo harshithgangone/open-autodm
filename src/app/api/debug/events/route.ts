@@ -1,5 +1,5 @@
 /**
- * Debug panel API — recent automation events.
+ * Debug panel API - recent automation events.
  * GET    → newest 200 events
  * DELETE → clear the log
  *

@@ -1,5 +1,5 @@
 /**
- * /auth/callback — Supabase auth code exchange (email confirmation links,
+ * /auth/callback - Supabase auth code exchange (email confirmation links,
  * OAuth providers if the self-hoster enables any). Sets session cookies and
  * forwards to the dashboard.
  */

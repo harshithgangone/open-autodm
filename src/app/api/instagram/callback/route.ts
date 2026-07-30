@@ -1,7 +1,7 @@
 /**
- * GET /api/instagram/callback — Instagram redirects here after consent.
+ * GET /api/instagram/callback - Instagram redirects here after consent.
  *
- * Flow (identity comes exclusively from the signed state JWT — CSRF-safe):
+ * Flow (identity comes exclusively from the signed state JWT - CSRF-safe):
  *   verify state → code → short-lived token → long-lived token (60d)
  *   → fetch profile → AES-256-GCM encrypt token → upsert instagram_accounts
  *   → subscribe account to webhook fields → redirect to /settings
@@ -73,7 +73,7 @@ export async function GET(request: Request): Promise<Response> {
 
     // Guarantee the FK target exists. Users created in the Supabase dashboard
     // BEFORE the migrations were applied have no profiles row (the auto-create
-    // trigger didn't exist yet) — backfill it here so the account insert can
+    // trigger didn't exist yet) - backfill it here so the account insert can
     // never hit a foreign-key violation.
     await db.from('profiles').upsert({ id: userId }, { onConflict: 'id', ignoreDuplicates: true });
 
@@ -100,7 +100,7 @@ export async function GET(request: Request): Promise<Response> {
       throw error;
     }
 
-    // Per-account webhook subscription — without this NO events are delivered.
+    // Per-account webhook subscription - without this NO events are delivered.
     await subscribeToWebhookFields(profile.user_id, longLived.access_token);
 
     debugLog('oauth', 'info', 'oauth_complete', 'ok', `Instagram @${profile.username} connected`, { userId });
@@ -115,7 +115,7 @@ export async function GET(request: Request): Promise<Response> {
 }
 
 /**
- * Human-readable message from anything thrown — including Supabase/Postgrest
+ * Human-readable message from anything thrown - including Supabase/Postgrest
  * error objects, which are not Error instances and stringify to
  * "[object Object]" otherwise.
  */
@@ -124,7 +124,7 @@ function describeError(err: unknown): string {
   if (err && typeof err === 'object') {
     const e = err as { message?: string; details?: string; hint?: string; code?: string };
     const parts = [e.message, e.details, e.code ? `(code ${e.code})` : null].filter(Boolean);
-    if (parts.length) return parts.join(' — ');
+    if (parts.length) return parts.join(' - ');
     try {
       return JSON.stringify(err).slice(0, 300);
     } catch {

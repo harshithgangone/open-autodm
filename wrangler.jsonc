@@ -1,4 +1,4 @@
-// Cloudflare Workers config — used only when deploying via `npm run cf:deploy`.
+// Cloudflare Workers config - used only when deploying via `npm run cf:deploy`.
 // Vercel deployments ignore this file entirely.
 {
   "$schema": "node_modules/wrangler/config-schema.json",

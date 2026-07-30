@@ -2,6 +2,6 @@
 # Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/displaying-a-sponsor-button-in-your-repository
 
 github: harshithgangone   # enable at github.com/sponsors (supports India payouts)
-# buy_me_a_coffee: —              # BMC does not support India payouts
+# buy_me_a_coffee: -              # BMC does not support India payouts
 # ko_fi: your-username             # https://ko-fi.com
 # custom: ["https://razorpay.me/@your-link"]   # UPI/Razorpay link for Indian supporters

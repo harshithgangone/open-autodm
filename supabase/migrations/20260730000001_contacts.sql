@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════════════════════════
--- open-autoDM — Contacts (automation-captured audience CRM)
+-- open-autoDM - Contacts (automation-captured audience CRM)
 --
 -- A contact is every unique audience member captured through an automation
 -- interaction: commented a trigger, DM'd a keyword, story-replied, or tapped

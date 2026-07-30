@@ -1,7 +1,7 @@
 /**
  * Instagram Business Login OAuth helpers.
  *
- * Uses instagram.com/oauth/authorize — NOT Facebook's dialog/oauth. This
+ * Uses instagram.com/oauth/authorize - NOT Facebook's dialog/oauth. This
  * yields an Instagram User Access Token, which is what the Instagram API
  * with Instagram Login requires for DMs and comment management.
  *
@@ -9,7 +9,7 @@
  *  - The code→token exchange MUST be multipart/form-data (FormData). Meta's
  *    docs use curl -F; x-www-form-urlencoded fails silently.
  *  - Short-lived token (1h) → long-lived (60d) via graph.instagram.com.
- *  - page_id does not exist under Instagram Business Login — never expect it.
+ *  - page_id does not exist under Instagram Business Login - never expect it.
  *  - A wrong client_secret surfaces as a misleading "redirect_uri not
  *    identical" error from Meta.
  */
@@ -34,7 +34,7 @@ export const REQUIRED_SCOPES = [
 // ── CSRF state JWT ──────────────────────────────────────────────────────────
 
 function stateSecret(): Uint8Array {
-  // HMAC key derived from the deployment's encryption key — one less env var
+  // HMAC key derived from the deployment's encryption key - one less env var
   // for self-hosters, and the state JWT is short-lived (10 minutes) anyway.
   return new TextEncoder().encode(`state:${getEnv().TOKEN_ENCRYPTION_KEY}`);
 }
@@ -85,7 +85,7 @@ export async function exchangeCodeForToken(
     const body = await res.text();
     throw new Error(
       `Instagram token exchange failed: ${res.status} ${body} | redirect_uri="${redirectUri}". ` +
-        'If Meta says "redirect_uri not identical", double-check your App Secret — a wrong secret produces this exact misleading error.'
+        'If Meta says "redirect_uri not identical", double-check your App Secret - a wrong secret produces this exact misleading error.'
     );
   }
   return (await res.json()) as IgShortLivedTokenResponse;

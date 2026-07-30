@@ -1,5 +1,5 @@
 /**
- * Automations CRUD — update + delete a single automation.
+ * Automations CRUD - update + delete a single automation.
  */
 
 import { z } from 'zod';
@@ -49,7 +49,7 @@ export async function PUT(request: Request, context: RouteContext): Promise<Resp
   const parsed = UpdateAutomationSchema.safeParse(body);
   if (!parsed.success) {
     const detail = parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ');
-    return Response.json({ error: `Validation failed — ${detail}`, details: parsed.error.issues }, { status: 400 });
+    return Response.json({ error: `Validation failed - ${detail}`, details: parsed.error.issues }, { status: 400 });
   }
 
   const db = createServiceClient();

@@ -1,6 +1,6 @@
 /**
  * Shared Zod schemas + helpers used across API routes.
- * (Route files may only export HTTP handlers — shared pieces live here.)
+ * (Route files may only export HTTP handlers - shared pieces live here.)
  */
 
 import { z } from 'zod';
