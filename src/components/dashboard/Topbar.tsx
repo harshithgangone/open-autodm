@@ -7,6 +7,7 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle";
 const TITLES: Record<string, string> = {
     "/dashboard": "Dashboard",
     "/automations": "Automations",
+    "/analytics": "Analytics",
     "/settings": "Settings",
     "/setup": "Setup Wizard",
 };

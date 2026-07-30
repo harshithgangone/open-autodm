@@ -35,6 +35,7 @@ $25/month tools, and new features land here regularly. **Watch** the repo to cat
 - **Ask-to-follow gate** - optionally ask people to follow you before delivering the content (Visit Profile + "I'm following ✅" buttons).
 - **Text + card responses** - plain messages, link buttons, or rich cards with image / subtitle / up to 3 URL buttons.
 - **`{username}` personalization** - greet commenters by their @handle in messages and public replies.
+- **Analytics** - conversion funnel (trigger → delivered → button tap → follow gained), daily trigger/delivery/contact charts, and per-automation breakdowns, filterable by automation and time range.
 - **Live debug panel** - watch every webhook → match → send step stream in real time while testing.
 
 ## 🛡️ Built to keep your Instagram account safe

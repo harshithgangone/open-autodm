@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
     Home,
     Bot,
+    ChartNoAxesColumn,
     Settings,
     Wrench,
     Github,
@@ -22,6 +23,7 @@ const NAV = {
     Workspace: [
         { name: "Dashboard", href: "/dashboard", icon: Home, external: false },
         { name: "Automations", href: "/automations", icon: Bot, external: false },
+        { name: "Analytics", href: "/analytics", icon: ChartNoAxesColumn, external: false },
     ],
     System: [
         { name: "Setup Wizard", href: "/setup", icon: Wrench, external: false },
