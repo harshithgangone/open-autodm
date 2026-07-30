@@ -28,3 +28,29 @@ export const useAuthStore = create<AuthStore>((set) => ({
   clearAuth: () => set({ user: null, session: null, isLoading: false }),
   setLoading: (loading) => set({ isLoading: loading }),
 }));
+
+/**
+ * Active Instagram account selection - a pure client-side convenience.
+ *
+ * SECURITY: the server never trusts this value. Every API route that accepts
+ * an accountId re-verifies that the account belongs to the authenticated user
+ * before using it; this store only decides which of the user's own accounts
+ * the UI is currently looking at. Persisted so the choice survives reloads.
+ */
+
+import { persist } from 'zustand/middleware';
+
+interface AccountStore {
+  activeAccountId: string | null;
+  setActiveAccount: (id: string | null) => void;
+}
+
+export const useAccountStore = create<AccountStore>()(
+  persist(
+    (set) => ({
+      activeAccountId: null,
+      setActiveAccount: (id) => set({ activeAccountId: id }),
+    }),
+    { name: 'open-autodm-active-account' }
+  )
+);

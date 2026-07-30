@@ -16,10 +16,13 @@ export interface ContactFromDB {
   automations: { id: string; name: string } | null;
 }
 
-export function useContacts() {
+export function useContacts(accountId?: string | null) {
   return useQuery({
-    queryKey: ['contacts'],
-    queryFn: () => apiClient<{ contacts: ContactFromDB[] }>('/contacts').then((r) => r.contacts),
+    queryKey: ['contacts', accountId ?? 'all'],
+    queryFn: () =>
+      apiClient<{ contacts: ContactFromDB[] }>(
+        `/contacts${accountId ? `?accountId=${encodeURIComponent(accountId)}` : ''}`
+      ).then((r) => r.contacts),
     staleTime: 30 * 1000,
     refetchInterval: 60 * 1000, // contacts grow as automations fire - keep fresh
   });

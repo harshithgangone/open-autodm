@@ -48,14 +48,15 @@ export interface AnalyticsPayload {
   truncated: boolean;
 }
 
-export function useAnalytics(params: { from: string; to: string; automationId: string }) {
+export function useAnalytics(params: { from: string; to: string; automationId: string; accountId?: string | null }) {
   const search = new URLSearchParams({
     from: params.from,
     to: params.to,
     automationId: params.automationId,
   });
+  if (params.accountId) search.set('accountId', params.accountId);
   return useQuery({
-    queryKey: ['analytics', params.from, params.to, params.automationId],
+    queryKey: ['analytics', params.from, params.to, params.automationId, params.accountId ?? 'all'],
     queryFn: () => apiClient<AnalyticsPayload>(`/analytics?${search.toString()}`),
     staleTime: 60 * 1000,
   });

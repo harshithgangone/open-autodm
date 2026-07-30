@@ -51,6 +51,7 @@ interface AutomationMeta {
   name: string;
   type: string;
   is_active: boolean;
+  instagram_account_id: string;
 }
 
 function dayKey(iso: string): string {
@@ -65,6 +66,7 @@ export async function GET(request: Request): Promise<Response> {
   const toParam = url.searchParams.get('to');
   const fromParam = url.searchParams.get('from');
   const automationId = url.searchParams.get('automationId') ?? 'all';
+  const requestedAccountId = url.searchParams.get('accountId');
 
   const to = toParam ? new Date(toParam) : new Date();
   const from = fromParam ? new Date(fromParam) : new Date(Date.now() - 30 * 86400_000);
@@ -84,14 +86,25 @@ export async function GET(request: Request): Promise<Response> {
     logger.error({ err: accErr }, 'Failed to fetch accounts');
     return Response.json({ error: 'Failed to load analytics' }, { status: 500 });
   }
-  const accountIds = (accounts ?? []).map((a) => a.id as string);
+  const ownedIds = (accounts ?? []).map((a) => a.id as string);
+
+  // Optional per-account scoping. SECURITY: the id must be user-owned.
+  let accountIds = ownedIds;
+  if (requestedAccountId) {
+    if (!ownedIds.includes(requestedAccountId)) {
+      return Response.json({ error: 'Instagram account not found' }, { status: 404 });
+    }
+    accountIds = [requestedAccountId];
+  }
 
   const { data: automations } = await db
     .from('automations')
-    .select('id, name, type, is_active')
+    .select('id, name, type, is_active, instagram_account_id')
     .eq('user_id', user.id)
     .order('created_at', { ascending: true });
-  const automationMeta = (automations ?? []) as AutomationMeta[];
+  const automationMeta = ((automations ?? []) as AutomationMeta[]).filter(
+    (a) => !requestedAccountId || a.instagram_account_id === requestedAccountId
+  );
 
   const empty = accountIds.length === 0;
 

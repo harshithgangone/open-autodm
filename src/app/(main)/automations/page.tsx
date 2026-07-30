@@ -7,6 +7,7 @@ import { AutomationsList } from "@/components/automations/AutomationsList";
 import { ContactsList } from "@/components/automations/ContactsList";
 import { NewAutomationModal } from "@/components/automations/new-flow/NewAutomationModal";
 import { useAutomations, useToggleAutomation, useDeleteAutomation } from "@/hooks/useAutomations";
+import { useActiveAccount } from "@/hooks/useActiveAccount";
 import type { AutomationFromDB } from "@/hooks/useAutomations";
 import { AutomationDebugPanel } from "@/components/debug/AutomationDebugPanel";
 
@@ -15,7 +16,8 @@ export default function AutomationsPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingAutomation, setEditingAutomation] = useState<AutomationFromDB | null>(null);
 
-    const { data: automations, isLoading } = useAutomations();
+    const { accountId } = useActiveAccount();
+    const { data: automations, isLoading } = useAutomations(accountId);
     const toggleMutation = useToggleAutomation();
     const deleteMutation = useDeleteAutomation();
 
@@ -88,6 +90,7 @@ export default function AutomationsPage() {
                 isOpen={isModalOpen}
                 onClose={handleModalClose}
                 editAutomation={editingAutomation}
+                accountId={accountId}
             />
 
             {/* Debug panel - visible only when NEXT_PUBLIC_DEBUG=true */}

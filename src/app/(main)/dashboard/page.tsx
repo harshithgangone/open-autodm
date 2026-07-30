@@ -3,20 +3,19 @@
 import Link from "next/link";
 import { Bot, Send, Instagram, Wrench, CheckCircle2, Circle, ArrowRight, Plus } from "lucide-react";
 import { useAutomations } from "@/hooks/useAutomations";
-import { useInstagramAccounts } from "@/hooks/useInstagramAccounts";
 import { useContacts } from "@/hooks/useContacts";
+import { useActiveAccount } from "@/hooks/useActiveAccount";
 import { useSetupStatus } from "@/hooks/useSetup";
 import { cn } from "@/lib/utils";
 
 export default function DashboardPage() {
-    const { data: automations } = useAutomations();
-    const { data: accounts } = useInstagramAccounts();
+    const { account: connectedAccount, accountId } = useActiveAccount();
+    const { data: automations } = useAutomations(accountId);
     const { data: setup } = useSetupStatus();
-    const { data: contacts } = useContacts();
+    const { data: contacts } = useContacts(accountId);
 
     const activeCount = automations?.filter(a => a.is_active).length ?? 0;
     const totalDms = automations?.reduce((sum, a) => sum + a.total_dms_sent, 0) ?? 0;
-    const connectedAccount = accounts?.[0] ?? null;
 
     const checklist = [
         { label: "Save your Meta app credentials", done: !!setup?.configured, href: "/setup" },

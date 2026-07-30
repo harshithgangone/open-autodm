@@ -15,6 +15,8 @@ interface NewAutomationModalProps {
     isOpen: boolean;
     onClose: () => void;
     editAutomation?: AutomationFromDB | null;
+    /** The account this automation belongs to (the sidebar's active account). */
+    accountId?: string | null;
 }
 
 export type CardButton = {
@@ -113,7 +115,7 @@ function automationToFlowData(automation: AutomationFromDB): AutomationFlowData 
     };
 }
 
-export function NewAutomationModal({ isOpen, onClose, editAutomation }: NewAutomationModalProps) {
+export function NewAutomationModal({ isOpen, onClose, editAutomation, accountId }: NewAutomationModalProps) {
     const isEditMode = !!editAutomation;
 
     const [step, setStep] = useState(0);
@@ -124,7 +126,8 @@ export function NewAutomationModal({ isOpen, onClose, editAutomation }: NewAutom
     const [pendingAction, setPendingAction] = useState<'save' | 'activate' | null>(null);
 
     const { data: igAccounts } = useInstagramAccounts();
-    const firstAccountId = igAccounts?.[0]?.id ?? null;
+    const activeAccount = igAccounts?.find((a) => a.id === accountId) ?? igAccounts?.[0] ?? null;
+    const firstAccountId = activeAccount?.id ?? null;
     const createMutation = useCreateAutomation();
     const updateMutation = useUpdateAutomation();
 
@@ -368,7 +371,7 @@ export function NewAutomationModal({ isOpen, onClose, editAutomation }: NewAutom
                                         <ConfigureStep
                                             data={flowData}
                                             onUpdate={updateData}
-                                            creatorProfilePicUrl={igAccounts?.[0]?.profile_picture_url ?? null}
+                                            creatorProfilePicUrl={activeAccount?.profile_picture_url ?? null}
                                         />
                                     )}
                                 </motion.div>

@@ -34,6 +34,17 @@ export async function GET(request: Request): Promise<Response> {
     return Response.json({ contacts: [] });
   }
 
+  // Optional per-account scoping. SECURITY: the requested id must be one of
+  // the authenticated user's own accounts - anything else is a 404.
+  const requestedAccountId = new URL(request.url).searchParams.get('accountId');
+  let scopedIds = accountIds;
+  if (requestedAccountId) {
+    if (!accountIds.includes(requestedAccountId)) {
+      return Response.json({ error: 'Instagram account not found' }, { status: 404 });
+    }
+    scopedIds = [requestedAccountId];
+  }
+
   const { data, error } = await db
     .from('contacts')
     .select(`
@@ -41,7 +52,7 @@ export async function GET(request: Request): Promise<Response> {
       first_interaction_at, last_interaction_at, last_trigger_type, total_triggers,
       automations ( id, name )
     `)
-    .in('instagram_account_id', accountIds)
+    .in('instagram_account_id', scopedIds)
     .order('last_interaction_at', { ascending: false })
     .limit(500);
 

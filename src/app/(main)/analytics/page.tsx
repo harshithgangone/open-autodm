@@ -18,6 +18,7 @@ import {
 import { Loader2, MessageCircle, Send, Image as ImageIcon, Users, UserCheck, AlertTriangle, ChartNoAxesColumn } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAnalytics } from "@/hooks/useAnalytics";
+import { useActiveAccount } from "@/hooks/useActiveAccount";
 
 /* Validated categorical palette - fixed slot order, per-mode steps */
 const PALETTE = {
@@ -69,6 +70,7 @@ export default function AnalyticsPage() {
     const { resolvedTheme } = useTheme();
     const colors = PALETTE[resolvedTheme === "light" ? "light" : "dark"];
 
+    const { account, accountId } = useActiveAccount();
     const [rangeDays, setRangeDays] = useState<number>(30);
     const [automationId, setAutomationId] = useState<string>("all");
 
@@ -80,7 +82,7 @@ export default function AnalyticsPage() {
         };
     }, [rangeDays]);
 
-    const { data, isLoading } = useAnalytics({ from, to, automationId });
+    const { data, isLoading } = useAnalytics({ from, to, automationId, accountId });
 
     const gridStroke = resolvedTheme === "light" ? "#EDEDEF" : "#232329";
     const axisTick = { fontSize: 10.5, fill: "#898781" } as const;
@@ -113,7 +115,9 @@ export default function AnalyticsPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                     <h1 className="text-xl font-heading font-semibold tracking-tight text-foreground">Analytics</h1>
-                    <p className="text-[13px] text-muted-foreground mt-0.5">What your automations actually did.</p>
+                    <p className="text-[13px] text-muted-foreground mt-0.5">
+                        {account ? <>What <span className="font-medium text-foreground">@{account.username}</span>&apos;s automations actually did.</> : "What your automations actually did."}
+                    </p>
                 </div>
                 <div className="flex items-center gap-2">
                     <select

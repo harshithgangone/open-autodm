@@ -40,7 +40,23 @@ export async function GET(request: Request): Promise<Response> {
   if (!user) return unauthorized();
 
   const db = createServiceClient();
-  const { data, error } = await db
+
+  // Optional per-account scoping. SECURITY: verify the account belongs to
+  // this user before filtering by it - never trust a client-sent id.
+  const requestedAccountId = new URL(request.url).searchParams.get('accountId');
+  if (requestedAccountId) {
+    const { data: owned } = await db
+      .from('instagram_accounts')
+      .select('id')
+      .eq('id', requestedAccountId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (!owned) {
+      return Response.json({ error: 'Instagram account not found' }, { status: 404 });
+    }
+  }
+
+  let query = db
     .from('automations')
     .select(`
       id, name, type, is_active, post_id, post_thumbnail_url, post_caption, keywords,
@@ -52,8 +68,9 @@ export async function GET(request: Request): Promise<Response> {
       instagram_account_id,
       instagram_accounts ( id, username, profile_picture_url )
     `)
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
+    .eq('user_id', user.id);
+  if (requestedAccountId) query = query.eq('instagram_account_id', requestedAccountId);
+  const { data, error } = await query.order('created_at', { ascending: false });
 
   if (error) {
     logger.error({ err: error, userId: user.id }, 'Failed to fetch automations');

@@ -121,11 +121,13 @@ async function processCardImages(responses: DMResponse[]): Promise<DMResponse[]>
   );
 }
 
-export function useAutomations() {
+export function useAutomations(accountId?: string | null) {
   return useQuery({
-    queryKey: ['automations'],
+    queryKey: ['automations', accountId ?? 'all'],
     queryFn: () =>
-      apiClient<{ automations: AutomationFromDB[] }>('/automations').then((r) => r.automations),
+      apiClient<{ automations: AutomationFromDB[] }>(
+        `/automations${accountId ? `?accountId=${encodeURIComponent(accountId)}` : ''}`
+      ).then((r) => r.automations),
   });
 }
 

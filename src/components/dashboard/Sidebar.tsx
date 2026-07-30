@@ -11,13 +11,12 @@ import {
     Github,
     ChevronLeft,
     ChevronRight,
-    Instagram,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
-import { useInstagramAccounts } from "@/hooks/useInstagramAccounts";
 import { LogoMark, LogoWordmark } from "@/components/ui/Logo";
+import { AccountSwitcher } from "@/components/dashboard/AccountSwitcher";
 
 const NAV = {
     Workspace: [
@@ -35,8 +34,6 @@ const NAV = {
 export function Sidebar() {
     const pathname = usePathname();
     const [isCollapsed, setIsCollapsed] = useState(false);
-    const { data: igAccounts } = useInstagramAccounts();
-    const firstAccount = igAccounts?.[0] ?? null;
 
     return (
         <motion.aside
@@ -116,39 +113,9 @@ export function Sidebar() {
                 ))}
             </div>
 
-            {/* Connected account */}
+            {/* Account switcher */}
             <div className={cn("border-t border-border p-2.5", isCollapsed && "px-2")}>
-                <Link href="/settings" className="block">
-                    <div className={cn(
-                        "flex items-center rounded-lg p-2 hover:bg-muted/60 transition-colors",
-                        isCollapsed ? "justify-center" : "gap-2.5"
-                    )}>
-                        <div className="relative w-7 h-7 rounded-full ig-ring p-[1.5px] shrink-0">
-                            <div className="w-full h-full rounded-full bg-background flex items-center justify-center overflow-hidden">
-                                {firstAccount?.profile_picture_url ? (
-                                    <img src={firstAccount.profile_picture_url} alt={firstAccount.username} className="w-full h-full object-cover rounded-full" />
-                                ) : (
-                                    <Instagram className="w-3.5 h-3.5 text-muted-foreground" />
-                                )}
-                            </div>
-                        </div>
-                        {!isCollapsed && (
-                            <div className="flex flex-col min-w-0">
-                                {firstAccount ? (
-                                    <>
-                                        <span className="text-[12px] font-medium text-foreground truncate leading-tight">@{firstAccount.username}</span>
-                                        <span className="text-[10px] text-muted-foreground leading-tight">Connected</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <span className="text-[12px] font-medium text-foreground leading-tight">No account</span>
-                                        <span className="text-[10px] text-muted-foreground leading-tight">Connect Instagram</span>
-                                    </>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                </Link>
+                <AccountSwitcher isCollapsed={isCollapsed} />
             </div>
         </motion.aside>
     );
