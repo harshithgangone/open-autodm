@@ -16,6 +16,10 @@ never touches anyone else's servers.
 **⭐ Star this repo now** — it takes 2 seconds, helps other creators find a free alternative to
 $25/month tools, and new features land here regularly. **Watch** the repo to catch them.
 
+> 🛠️ **Don't want to set it up yourself?** I'll deploy the whole system on your own accounts —
+> running at near-zero server cost — for a minimal one-time setup charge, for all your Instagram
+> accounts. DM me on Instagram: [**@buildwharsha**](https://www.instagram.com/buildwharsha/) 🙂
+
 </div>
 
 ---
