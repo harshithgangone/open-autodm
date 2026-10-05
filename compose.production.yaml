@@ -1,0 +1,12 @@
+# Attach only the HTTP app to the existing Caddy edge network.
+services:
+  app:
+    networks:
+      default:
+      caddy:
+        aliases:
+          - open-autodm-app
+networks:
+  caddy:
+    external: true
+    name: ${CADDY_NETWORK:-caddy}

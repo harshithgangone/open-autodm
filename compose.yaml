@@ -1,0 +1,45 @@
+x-common: &common
+  image: open-autodm:local
+  env_file: .env.local
+  restart: unless-stopped
+  init: true
+  security_opt:
+    - no-new-privileges:true
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+services:
+  app:
+    <<: *common
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:?Set project URL}
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:?Set publishable key}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:?Set HTTPS public URL}
+    ports:
+      - "127.0.0.1:3018:3000"
+    mem_limit: 768m
+    cpus: 1.0
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 15s
+      start_period: 30s
+  worker:
+    <<: *common
+    command: ["node", "node_modules/tsx/dist/cli.mjs", "scripts/worker.ts"]
+    depends_on:
+      app:
+        condition: service_healthy
+    mem_limit: 384m
+    cpus: 1.0
+    stop_grace_period: 30s

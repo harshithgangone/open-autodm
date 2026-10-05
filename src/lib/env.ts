@@ -33,14 +33,14 @@ export function getEnv(): ServerEnv {
   if (cached) return cached;
 
   const serverResult = serverEnvSchema.safeParse({
-    SUPABASE_SERVICE_ROLE_KEY: process.env['SUPABASE_SERVICE_ROLE_KEY'],
+    SUPABASE_SERVICE_ROLE_KEY: process.env['SUPABASE_SECRET_KEY'] ?? process.env['SUPABASE_SERVICE_ROLE_KEY'],
     TOKEN_ENCRYPTION_KEY: process.env['TOKEN_ENCRYPTION_KEY'],
     CRON_SECRET: process.env['CRON_SECRET'],
   });
 
   const publicResult = publicEnvSchema.safeParse({
     NEXT_PUBLIC_SUPABASE_URL: process.env['NEXT_PUBLIC_SUPABASE_URL'],
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'],
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env['NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'] ?? process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'],
     NEXT_PUBLIC_APP_URL: process.env['NEXT_PUBLIC_APP_URL'],
   });
 

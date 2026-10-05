@@ -13,6 +13,7 @@
  */
 
 import { processDueJobs } from '@/lib/automation/engine';
+import { processTransportJobs } from '@/lib/transport/worker';
 import { createServiceClient } from '@/lib/supabase/service';
 import { refreshLongLivedToken } from '@/lib/instagram/oauth';
 import { decrypt, encrypt, safeCompare } from '@/lib/crypto';
@@ -84,6 +85,7 @@ async function handle(request: Request): Promise<Response> {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const transport = await processTransportJobs(16);
   const drain = await processDueJobs(25);
   const tokensRefreshed = await refreshExpiringTokens();
 
@@ -91,8 +93,10 @@ async function handle(request: Request): Promise<Response> {
   const { error: cleanupError } = await db.rpc('cleanup_old_rows');
   if (cleanupError) logger.warn({ err: cleanupError }, 'cleanup_old_rows failed');
 
+  await db.rpc('transport_cleanup');
   return Response.json({
     ok: true,
+    transportClaimed: transport,
     jobs: drain,
     tokensRefreshed,
     at: new Date().toISOString(),

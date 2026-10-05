@@ -1,0 +1,25 @@
+name: Bot transport checks
+on:
+  push:
+  pull_request:
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: sudo apt-get update && sudo apt-get install -y postgresql-16
+      - run: npm test
+      - run: npm run test:integration
+        env:
+          TEST_PG_BIN: /usr/lib/postgresql/16/bin
+      - run: npm run typecheck
+      - run: npm audit
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://fixture.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: fixture-publishable-key-at-least-20

@@ -1,8 +1,7 @@
 /**
  * Webhook payload processing - routes Meta events to queue jobs.
  *
- * Runs AFTER the 200 response has been sent to Meta (via `after()`), so
- * nothing here is latency-critical. Ported 1:1 from the proven receiver:
+ * Runs from the durable webhook inbox. Failed routing is retried. Ported 1:1 from the proven receiver:
  *
  *  comment events → keyword/post match → auto_dm job
  *  DM events      → quick-reply/postback session routing → follow_up job
@@ -15,6 +14,7 @@ import { createLogger } from '@/lib/logger';
 import { debugLog } from '@/lib/debugLog';
 import { keywordMatches } from '@/lib/automation/keywordMatch';
 import { enqueueJob } from '@/lib/automation/queue';
+import { routeBotDm } from '@/lib/transport/inbox';
 import { recordContactInteraction } from '@/lib/automation/contacts';
 import type {
   MetaWebhookBody,
@@ -55,7 +55,8 @@ export async function processWebhookPayload(body: MetaWebhookBody): Promise<numb
       .eq('is_active', true)
       .single();
 
-    if (error || !igAccount) {
+    if (error && error.code !== 'PGRST116') throw new Error('account_lookup_failed');
+    if (!igAccount) {
       debugLog('webhook', 'warn', 'ig_account_lookup', 'skipped', `No active IG account for entry.id=${entry.id}`, {
         entryId: entry.id,
         hint: 'Meta console "Test" button sends entry.id=0 (fake) - real comments from the connected account are required.',
@@ -121,7 +122,7 @@ async function processCommentEvent(
     ageSeconds: Math.round(eventAgeMs / 1000),
   });
 
-  if (eventAgeMs > MAX_EVENT_AGE_MS) {
+  if (eventAgeMs > MAX_EVENT_AGE_MS || eventAgeMs < -300_000) {
     debugLog('webhook', 'warn', 'window_check', 'skipped', `Comment ${Math.round(eventAgeMs / 3600000)}h old - beyond processing window`, {});
     return 0;
   }
@@ -136,7 +137,7 @@ async function processCommentEvent(
 
   if (error) {
     debugLog('webhook', 'error', 'automations_fetch', 'error', `DB error fetching automations: ${error.message}`, {});
-    return 0;
+    throw new Error('automation_lookup_failed');
   }
   if (!automations?.length) {
     debugLog('webhook', 'info', 'automations_fetch', 'skipped', 'No active comment_dm automations for this account', {});
@@ -215,7 +216,7 @@ async function processDmEvent(
     return 0;
   }
   // Self-messaging loop guard
-  if (messaging.sender.id === messaging.recipient.id) return 0;
+  if (messaging.sender.id === messaging.recipient.id || messaging.sender.id === igAccountIgsid || messaging.recipient.id !== igAccountIgsid) return 0;
 
   const message = messaging.message;
   const triggerTimestamp = messaging.timestamp;
@@ -227,7 +228,7 @@ async function processDmEvent(
     hasPostback: !!messaging.postback,
   });
 
-  if (eventAgeMs > MAX_EVENT_AGE_MS) {
+  if (eventAgeMs > MAX_EVENT_AGE_MS || eventAgeMs < -300_000) {
     debugLog('webhook', 'warn', 'window_check', 'skipped', `DM event ${Math.round(eventAgeMs / 3600000)}h old - beyond window`, {});
     return 0;
   }
@@ -262,7 +263,7 @@ async function processDmEvent(
         debugLog('webhook', 'error', 'session_lookup', 'error', `DB error fetching session: ${sessionError.message}`, {
           sessionId,
         });
-        // Fall through to keyword matching rather than dropping the event
+        throw new Error('session_lookup_failed');
       } else if (!session) {
         debugLog('webhook', 'warn', 'session_lookup', 'skipped', `Session ${sessionId} not found - tap ignored`, { sessionId });
         return 0;
@@ -313,6 +314,14 @@ async function processDmEvent(
     return 0;
   }
 
+  const botRoute = await routeBotDm(instagramAccountId, messaging.sender.id, message.mid, message.text, triggerTimestamp);
+  if (botRoute === 'duplicate') return 0;
+  if (botRoute === 'received') {
+    recordContactInteraction({ instagramAccountId, audienceIgUserId: messaging.sender.id,
+      triggerType: message.reply_to?.story ? 'story_reply' : 'dm', automationId: null });
+    return 1;
+  }
+
   const isStoryReply = !!message.reply_to?.story;
   const automationType = isStoryReply ? 'story_reply' : 'dm_reply';
   const triggerType = isStoryReply ? 'story_reply' : 'dm';
@@ -333,7 +342,7 @@ async function processDmEvent(
 
   if (error) {
     debugLog('webhook', 'error', 'automations_fetch', 'error', `DB error fetching ${automationType} automations: ${error.message}`, {});
-    return 0;
+    throw new Error('automation_lookup_failed');
   }
   if (!automations?.length) {
     debugLog('webhook', 'info', 'automations_fetch', 'skipped', `No active ${automationType} automations`, {});

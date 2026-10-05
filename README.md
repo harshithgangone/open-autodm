@@ -179,3 +179,7 @@ See [LICENSE](LICENSE).
 Built with ❤️ by <a href="https://www.instagram.com/buildwharsha/"><b>@buildwharsha</b></a> - say hi on Instagram
 
 </div>
+
+## External bot transport
+
+Account-scoped webhooks and an asynchronous reply API connect external bots to Instagram Direct. See [API contract](docs/BOT_API.md), [headless agent management](docs/AGENT_API.md) and [VPS deployment](docs/DEPLOYMENT.md). Bot logic and LLM calls run in your own backend. The existing Instagram connection and automation UI remains available.

@@ -44,7 +44,7 @@ export async function enqueueJob(
       dedupeKey,
       error: error.message,
     });
-    return null;
+    throw new Error('job_enqueue_failed');
   }
   return (data?.id as string) ?? null;
 }

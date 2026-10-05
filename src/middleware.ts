@@ -7,11 +7,13 @@
  * touched by session logic, and app API routes authenticate via Bearer JWT.
  */
 
-import { NextResponse, type NextRequest } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
+import { NextResponse, type NextRequest } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+import { isOwnerAllowed } from "@/lib/access";
 
-const SUPABASE_URL = process.env['NEXT_PUBLIC_SUPABASE_URL']!;
-const SUPABASE_ANON_KEY = process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!;
+const SUPABASE_URL = process.env["NEXT_PUBLIC_SUPABASE_URL"]!;
+const SUPABASE_ANON_KEY = (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)!;
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -22,9 +24,13 @@ export async function middleware(request: NextRequest) {
         return request.cookies.getAll();
       },
       setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+        cookiesToSet.forEach(({ name, value }) =>
+          request.cookies.set(name, value),
+        );
         supabaseResponse = NextResponse.next({ request });
-        cookiesToSet.forEach(({ name, value, options }) => supabaseResponse.cookies.set(name, value, options));
+        cookiesToSet.forEach(({ name, value, options }) =>
+          supabaseResponse.cookies.set(name, value, options),
+        );
       },
     },
   });
@@ -35,22 +41,23 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const allowed = !!user && isOwnerAllowed(user.email);
   const pathname = request.nextUrl.pathname;
   const isProtectedRoute =
-    pathname.startsWith('/dashboard') ||
-    pathname.startsWith('/automations') ||
-    pathname.startsWith('/settings') ||
-    pathname.startsWith('/setup');
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/automations") ||
+    pathname.startsWith("/settings") ||
+    pathname.startsWith("/setup");
 
-  if (isProtectedRoute && !user) {
+  if (isProtectedRoute && !allowed) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = '/';
+    redirectUrl.pathname = "/";
     return NextResponse.redirect(redirectUrl);
   }
 
-  if (pathname === '/' && user) {
+  if (pathname === "/" && allowed) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = '/dashboard';
+    redirectUrl.pathname = "/dashboard";
     return NextResponse.redirect(redirectUrl);
   }
 
@@ -64,6 +71,6 @@ export const config = {
      *  - /api/* (webhook + cron + Bearer-authenticated app APIs)
      *  - _next static assets, favicon, auth callback
      */
-    '/((?!api/|_next/static|_next/image|favicon.ico|icon.svg|logo.svg|auth/).*)',
+    "/((?!api/|_next/static|_next/image|favicon.ico|icon.svg|logo.svg|auth/).*)",
   ],
 };
