@@ -30,13 +30,28 @@ export interface DrainResult {
   failed: number;
 }
 
-export async function processDueJobs(limit: number): Promise<DrainResult> {
+/**
+ * Wall-clock budget for one drain. Routes run with maxDuration = 60s and a
+ * multi-response flow can take ~15s, so stop starting new jobs well before
+ * the platform kills the invocation (which would strand claimed jobs in
+ * 'processing' until the 10-minute stale-lock sweep).
+ */
+const DEFAULT_DRAIN_BUDGET_MS = 40_000;
+
+export async function processDueJobs(limit: number, budgetMs = DEFAULT_DRAIN_BUDGET_MS): Promise<DrainResult> {
+  const deadline = Date.now() + budgetMs;
   const jobs = await claimDueJobs(limit);
   const result: DrainResult = { claimed: jobs.length, done: 0, rescheduled: 0, failed: 0 };
 
   // Sequential on purpose: preserves jitter spacing between sends and keeps a
   // single invocation from bursting DMs to Meta in parallel.
-  for (const job of jobs) {
+  for (const [idx, job] of jobs.entries()) {
+    if (Date.now() >= deadline) {
+      // Out of time - hand the rest back immediately so the next drain picks them up.
+      await Promise.all(jobs.slice(idx).map((j) => rescheduleJob(j, 0, null, false)));
+      result.rescheduled += jobs.length - idx;
+      break;
+    }
     await runJob(job, result);
   }
 
