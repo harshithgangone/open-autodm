@@ -28,20 +28,51 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const { accountId, incidentId } = parsed.data;
-
   const db = createServiceClient();
-  const { data: account, error } = await db
+
+  const { data: account, error: accountError } = await db
     .from('instagram_accounts')
-    .select('id, user_id')
+    .select('id, user_id, traffic_guard_paused, traffic_guard_incident_id')
     .eq('id', accountId)
     .single();
 
-  if (error || !account) {
+  if (accountError || !account) {
     return Response.json({ error: 'Instagram account not found' }, { status: 404 });
   }
 
   if (account.user_id !== user.id) {
     return Response.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  // Do not let an old dashboard tab resume jobs for a newer incident, or
+  // replay a resume after the current incident has already been released.
+  if (
+    account.traffic_guard_paused !== true ||
+    account.traffic_guard_incident_id !== incidentId
+  ) {
+    return Response.json(
+      { error: 'This incident is no longer the active paused incident' },
+      { status: 409 }
+    );
+  }
+
+  const { data: incident, error: incidentError } = await db
+    .from('comment_traffic_incidents')
+    .select('id, paused_at, resumed_at')
+    .eq('id', incidentId)
+    .eq('instagram_account_id', accountId)
+    .single();
+
+  if (
+    incidentError ||
+    !incident ||
+    !incident.paused_at ||
+    incident.resumed_at
+  ) {
+    return Response.json(
+      { error: 'This incident is not awaiting resumption' },
+      { status: 409 }
+    );
   }
 
   try {
@@ -50,7 +81,7 @@ export async function POST(request: Request): Promise<Response> {
   } catch (err) {
     return Response.json(
       { error: err instanceof Error ? err.message : 'Failed to resume account automations' },
-      { status: 500 }
+      { status: 409 }
     );
   }
 }
