@@ -235,7 +235,7 @@ export function TrafficGuardCard({ accountId }: TrafficGuardCardProps) {
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
-            {isHighTraffic && !isPaused && incident?.id && (
+            {isHighTraffic && !isPaused && incident?.id && !incident.resumed_at && (
               <button
                 onClick={handlePause}
                 disabled={isPausing}
