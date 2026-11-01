@@ -29,6 +29,9 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
 
+      - name: Validate operational shell scripts
+        run: bash -n scripts/backup-production-db.sh scripts/restore-verify-db.sh
+
       - name: Run unit tests
         run: npm test
 
