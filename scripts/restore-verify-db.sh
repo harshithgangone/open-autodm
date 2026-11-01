@@ -45,6 +45,17 @@ printf '\n'
 [[ "$DB_PORT" =~ ^[0-9]{1,5}$ ]] || fail "Database port must be numeric."
 (( DB_PORT > 0 && DB_PORT <= 65535 )) || fail "Database port is outside the valid range."
 [[ "$DB_USER" =~ ^[A-Za-z0-9_.-]+$ ]] || fail "Database username contains unsupported characters."
+if [[ "$DB_HOST" == *"$PRODUCTION_PROJECT_REF"* ]]; then
+  fail "Production host detected. Refusing to run a restore against production."
+elif [[ "$DB_HOST" == *.pooler.supabase.com ]]; then
+  [[ "$DB_USER" == "postgres.$TARGET_REF" ]] || fail "Pooler username does not match the disposable target project ref."
+elif [[ "$DB_HOST" == "db.$TARGET_REF.supabase.co" || "$DB_HOST" == "db.$TARGET_REF.supabase.com" ]]; then
+  [[ "$DB_USER" == "postgres" ]] || fail "Direct database username should be postgres."
+elif [[ "$DB_HOST" == "127.0.0.1" || "$DB_HOST" == "localhost" ]]; then
+  [[ "$TARGET_REF" == "localrestore00000001" ]] || fail "Local PostgreSQL restore must use the localrestore00000001 target label."
+else
+  fail "Target host does not match the declared disposable Supabase project or local restore target."
+fi
 [[ -n "$DB_PASSWORD" ]] || fail "Database password cannot be empty."
 [[ "$DB_PASSWORD" != *$'\n'* && "$DB_PASSWORD" != *$'\r'* ]] || fail "Password must not contain newline characters."
 [[ "$DB_NAME" =~ ^[A-Za-z0-9_.-]+$ ]] || fail "RESTORE_DB_NAME contains unsupported characters."
