@@ -6,6 +6,18 @@ Status: **planning only**. This document records the release sequence; it does n
 
 Before using this runbook, re-check the actual target project's migration history, project plan, Security Advisor, extension locations, cron jobs, workload counts, and the exact application deployment. Staging observations do not prove production is in the same state. Keep raw ACL output and detailed live security findings in a private operator record, not in this public repository.
 
+### Current production preflight observations (read only, 2026-11-01)
+
+The live production project was re-checked against this runbook:
+
+- **Legacy client table grants remain broad.** Direct grants to `anon` and `authenticated` still include full legacy CRUD plus `TRUNCATE`, `REFERENCES`, and `TRIGGER` privileges on multiple public tables, including `app_settings`, `automations`, `instagram_accounts`, `job_queue`, `debug_events`, `dm_jobs`, `dm_sent_log`, `contacts`, and others. RLS does not protect whole-table `TRUNCATE` or `REFERENCES` privileges. This is a production security blocker until the reviewed grants migration is applied and postflight proves the intended least-privilege state.
+- **Future-object defaults are also broad.** The `postgres` default ACL for `public` currently gives `anon` and `authenticated` table CRUD/maintenance privileges, sequence rights, and function execution. The default-privilege migrations are therefore required, not optional cleanup.
+- **Privileged RPCs remain exposed.** The targeted function ACL check found 7 backend-only SECURITY DEFINER functions executable by `anon`, and all 10 checked backend-only/traffic-guard RPCs executable by `authenticated`. The function search-path check also found `public.handle_updated_at()` without a pinned search path. The corresponding release-prep migrations address these findings.
+- **Extension/scheduler state:** production currently has neither `pg_cron` nor `pg_net` installed; `cron.job` and `net.http_request_queue` do not exist. A separate Cloudflare cron-dispatcher Worker is configured every minute, so do not add a Supabase job until one scheduler is explicitly selected.
+- **Explicit PUBLIC object ACLs:** the checked public table/view/sequence ACL query returned zero explicit `PUBLIC` grants. This does not offset the broad `anon` and `authenticated` grants above.
+
+Keep the detailed table-by-table ACL output in the private operator record. Do not publish raw ACLs or user data in this repository.
+
 Cloudflare production preflight observation (read-only, 2026-10-28): the Worker Domain record maps `app.opendm.in` to service `open-autodm-production` / environment `production`, and no production Cron Trigger is configured. The Worker script settings also include the tag `cf:service=open-autodm-staging` alongside `cf:environment=production`. Verify whether this is stale metadata before cutover; the domain mapping currently points to the production service, so do not infer a routing failure from the tag alone. Resolve any confirmed metadata/configuration discrepancy only through a separately reviewed production change.
 
 ## Read-only SQL preflight and postflight
