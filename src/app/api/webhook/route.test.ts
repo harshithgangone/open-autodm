@@ -81,6 +81,23 @@ describe('Meta webhook route signature and verification safety', () => {
     expect(response.status).toBe(403);
   });
 
+  it('keeps the Meta GET verification challenge available when POST processing is disabled', async () => {
+    vi.stubEnv('META_WEBHOOK_PROCESSING_ENABLED', 'false');
+
+    try {
+      const request = new Request(
+        'https://staging.example.test/api/webhook?hub.mode=subscribe&hub.verify_token=test-webhook-verify-token&hub.challenge=staging-challenge'
+      );
+
+      const response = await GET(request);
+
+      expect(response.status).toBe(200);
+      expect(await response.text()).toBe('staging-challenge');
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it('accepts a valid HMAC signature and defers the empty webhook payload', async () => {
     const rawBody = JSON.stringify({ object: 'instagram', entry: [] });
     const signature = `sha256=${hmacSha256Hex(appSecret, Buffer.from(rawBody, 'utf8'))}`;
@@ -123,6 +140,32 @@ describe('Meta webhook route signature and verification safety', () => {
 
       expect(response.status).toBe(200);
       expect(await response.json()).toEqual({ status: 'ok' });
+      expect(mocks.after).not.toHaveBeenCalled();
+      expect(mocks.debugLog).not.toHaveBeenCalled();
+      expect(mocks.processWebhookPayload).not.toHaveBeenCalled();
+      expect(mocks.processDueJobs).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it('still rejects a bad HMAC signature when POST processing is disabled', async () => {
+    vi.stubEnv('META_WEBHOOK_PROCESSING_ENABLED', 'false');
+
+    try {
+      const rawBody = JSON.stringify({ object: 'instagram', entry: [] });
+      const request = new Request('https://staging.example.test/api/webhook', {
+        method: 'POST',
+        headers: {
+          'x-hub-signature-256': `sha256=${'0'.repeat(64)}`,
+          'content-type': 'application/json',
+        },
+        body: rawBody,
+      });
+
+      const response = await POST(request);
+
+      expect(response.status).toBe(403);
       expect(mocks.after).not.toHaveBeenCalled();
       expect(mocks.debugLog).not.toHaveBeenCalled();
       expect(mocks.processWebhookPayload).not.toHaveBeenCalled();
