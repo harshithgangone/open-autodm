@@ -198,6 +198,7 @@ export interface TrafficGuardStatusResponse {
   account_id: string;
   traffic_status: 'normal' | 'high_traffic' | 'recovered';
   is_paused: boolean;
+  paused_incident_id: string | null;
   current_60s_count: number;
   settings: TrafficGuardSettings;
   active_automations_count: number;
