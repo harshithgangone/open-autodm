@@ -29,6 +29,19 @@ A database-level integration test was run against the isolated, inactive staging
 
 The transaction returned a PASS result and then rolled back. Post-test verification found zero fixture automation rows, zero fixture job rows, zero fixture incidents, and the staging account remained inactive, unpaused, with both incident pointers null. This validates the database RPC path only; it does not replace HTTP/API, signed Meta webhook, OAuth, or actual Instagram DM delivery tests.
 
+### Staging security postflight after hardening (passed 2026-11-01)
+
+The staging Security Advisor was re-run after the eight October security migrations and the two Traffic Guard follow-up migrations:
+
+- No `anon` table grants remain in `public`.
+- The remaining `authenticated` table grants are the targeted application access set; no `TRUNCATE`, `REFERENCES`, or `TRIGGER` privileges remain.
+- Default privileges for future public objects grant table/sequence/function access to `service_role` only; no future client-role or `PUBLIC` grants remain.
+- All 12 checked backend-only SECURITY DEFINER RPCs are denied to `anon` and `authenticated` and executable by `service_role` only.
+- The expected five RLS-enabled internal tables without client policies remain INFO findings; this is intentional for service-role-only tables, not a client-access grant.
+- The staging Auth Advisor still reports leaked-password protection disabled. Enable it in Supabase Auth settings before public launch; this is a dashboard setting and was not changed by these database migrations.
+
+Production Security Advisor still reports the legacy client-grant and privileged-RPC findings described below; staging results must not be treated as production proof.
+
 ### Current production preflight observations (read only, 2026-11-01)
 
 The live production project was re-checked against this runbook:
