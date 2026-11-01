@@ -274,6 +274,8 @@ Before deploying this branch to the **staging Worker**, set `META_WEBHOOK_PROCES
 
 Treat this as a **release gate**: before any valid-signature test or OAuth round-trip, verify the current callback URL and subscribed Instagram account in Meta's developer dashboard, and determine whether staging is receiving live or test notifications for the shared app. The callback configuration is app-level for the normal Webhooks setup; do not assume staging is test-only based on its hostname. Keep the cloned staging account inactive until a dedicated staging app/test account or approved isolated callback/routing plan is confirmed. Do not change the Meta Dashboard, callback URL, app credentials, or production setup as part of this prep. Re-enable the staging account only as part of an approved test setup.
 
+**Additional read-only check (2026-11-01):** the deployed staging Worker bundle contains the `META_WEBHOOK_PROCESSING_ENABLED=false` guard, but the current Worker bindings do **not** include a `META_WEBHOOK_PROCESSING_ENABLED` variable. The staging database currently has zero active Instagram accounts, which is the effective containment observed today. Because the code continues processing when this variable is unset, add and verify the explicit plain-text Worker variable set to `false` before any staging account is re-enabled or a live signed-event test is attempted. Keep the account inactive until both controls and the dedicated test-account/routing gate are satisfied.
+
 ### 1. Valid-signature webhook smoke test
 
 Use the exact staging origin from the deployment dashboard. In a trusted terminal, enter the staging Meta app secret at the hidden prompt; do not place it in the command text or save it in a file. This sends only an empty-entry webhook payload, which must not enqueue DMs:
@@ -318,6 +320,12 @@ Do not fake OAuth success by inserting a token directly into the database. If a 
 ## Production cron setup (operator runbook; do not run until authorized)
 
 The expected scheduler is Supabase Cron + `pg_net`; the repo's Vercel schedule is not active on the current Cloudflare deployment.
+
+**Scheduler reconciliation required (read-only snapshot, 2026-11-01):** Cloudflare currently has a separate `open-autodm-cron-dispatcher` Worker configured with a `* * * * *` Cron Trigger. Its `APP_URL` binding is present and its `CRON_SECRET` binding is configured; the production app Worker also has a `CRON_SECRET` binding. Cloudflare does not reveal secret values on read, so equality of the two secrets and successful delivery to `/api/cron/process-jobs` have **not** been verified. Separately, the production Supabase project currently has neither `pg_cron` nor `pg_net` installed and has no Supabase processor job. Treat the Cloudflare dispatcher as a potentially active scheduler until its execution is proven otherwise.
+
+**Do not create the Supabase Cron job below while the Cloudflare dispatcher schedule remains enabled.** Select exactly one scheduler in the change record. If selecting Supabase Cron + `pg_net`, first disable the Cloudflare dispatcher's Cron Trigger through a separately reviewed change, then coordinate and verify the app Worker / Vault secret without printing it. If selecting the Cloudflare dispatcher, verify its target URL and matching secret through a safe non-processing validation path and do not add the Vault-backed Supabase job. The current state is a scheduler-selection blocker, not proof that either path is processing jobs successfully.
+
+**Cloudflare runtime parity gate:** the current production app Worker reports only `nodejs_compat`; the release-prep `wrangler.jsonc` also enables `nodejs_compat_populate_process_env`. Verify that flag is present on the production Worker after the reviewed release deployment, because server environment validation reads runtime bindings through `process.env`.
 
 ### 1. Store the matching secret in Supabase Vault
 
