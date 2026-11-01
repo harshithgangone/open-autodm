@@ -46,6 +46,13 @@ printf '\n'
 [[ "$DB_PORT" =~ ^[0-9]{1,5}$ ]] || fail "Database port must be numeric."
 (( DB_PORT > 0 && DB_PORT <= 65535 )) || fail "Database port is outside the valid range."
 [[ "$DB_USER" =~ ^[A-Za-z0-9_.-]+$ ]] || fail "Database username contains unsupported characters."
+if [[ "$DB_HOST" == *.pooler.supabase.com ]]; then
+  [[ "$DB_USER" == "postgres.$PROJECT_REF" ]] || fail "Pooler username does not match the production project ref."
+elif [[ "$DB_HOST" == "db.$PROJECT_REF.supabase.co" || "$DB_HOST" == "db.$PROJECT_REF.supabase.com" ]]; then
+  [[ "$DB_USER" == "postgres" ]] || fail "Direct database username should be postgres."
+else
+  fail "Database host does not identify the configured Open AutoDM production project. Re-check Dashboard → Connect."
+fi
 [[ -n "$DB_PASSWORD" ]] || fail "Database password cannot be empty."
 [[ "$DB_PASSWORD" != *$'\n'* && "$DB_PASSWORD" != *$'\r'* ]] || fail "Password must not contain newline characters."
 
