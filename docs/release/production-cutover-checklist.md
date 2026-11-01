@@ -6,6 +6,12 @@ Status: **planning only**. This document records the release sequence; it does n
 
 Before using this runbook, re-check the actual target project's migration history, project plan, Security Advisor, extension locations, cron jobs, workload counts, and the exact application deployment. Staging observations do not prove production is in the same state. Keep raw ACL output and detailed live security findings in a private operator record, not in this public repository.
 
+### Staging Traffic Guard resume hardening (applied 2026-11-01)
+
+The new migration `20261101102107_harden_traffic_guard_resume.sql` was applied successfully to `open-autodm-staging`. Post-apply SQL verification confirmed the `traffic_guard_resume_account(UUID, UUID)` function has a pinned empty search path, denies `anon` and `authenticated` EXECUTE, retains `service_role` EXECUTE, and checks both the current account incident and an incident that has not already been resumed. The staging project still has zero active Instagram accounts. The matching migration filename is committed on `opendm-release-prep` so repository migration history matches the database version.
+
+The API route now rejects stale/non-current incidents before calling the RPC and returns 409 for incident conflicts while preserving 500 for non-conflict backend failures. Regression tests cover unauthenticated requests, stale incident IDs, already-resumed incidents, and the valid owner path. Full CI on the final route commit is still required before merge; do not deploy this change to production until the production backup/recovery and migration cutover gates pass.
+
 ### Current production preflight observations (read only, 2026-11-01)
 
 The live production project was re-checked against this runbook:
