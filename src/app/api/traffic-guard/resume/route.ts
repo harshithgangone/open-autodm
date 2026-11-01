@@ -79,9 +79,8 @@ export async function POST(request: Request): Promise<Response> {
     const result = await resumeAccountAutomations(accountId, incidentId);
     return Response.json(result);
   } catch (err) {
-    return Response.json(
-      { error: err instanceof Error ? err.message : 'Failed to resume account automations' },
-      { status: 409 }
-    );
+    const message = err instanceof Error ? err.message : 'Failed to resume account automations';
+    const isConflict = /incident|paused/i.test(message);
+    return Response.json({ error: message }, { status: isConflict ? 409 : 500 });
   }
 }
