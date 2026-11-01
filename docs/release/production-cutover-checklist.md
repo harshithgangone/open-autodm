@@ -8,9 +8,14 @@ Before using this runbook, re-check the actual target project's migration histor
 
 ### Staging Traffic Guard resume hardening (applied 2026-11-01)
 
-The new migration `20261101102107_harden_traffic_guard_resume.sql` was applied successfully to `open-autodm-staging`. Post-apply SQL verification confirmed the `traffic_guard_resume_account(UUID, UUID)` function has a pinned empty search path, denies `anon` and `authenticated` EXECUTE, retains `service_role` EXECUTE, and checks both the current account incident and an incident that has not already been resumed. The staging project still has zero active Instagram accounts. The matching migration filename is committed on `opendm-release-prep` so repository migration history matches the database version.
+Two follow-up migrations are applied to `open-autodm-staging` and their source filenames match the recorded database versions:
 
-The API route now rejects stale/non-current incidents before calling the RPC and returns 409 for incident conflicts while preserving 500 for non-conflict backend failures. Regression tests cover unauthenticated requests, stale incident IDs, already-resumed incidents, and the valid owner path. Full CI on the final route commit is still required before merge; do not deploy this change to production until the production backup/recovery and migration cutover gates pass.
+- `20261101102107_harden_traffic_guard_resume.sql` blocks stale/replayed resume calls and restricts the resume RPC to `service_role`.
+- `20261101102552_separate_traffic_guard_pause_incident.sql` adds `traffic_guard_paused_incident_id`, distinct from the latest `traffic_guard_incident_id`. This preserves the original pause owner when a newer traffic spike arrives while automations are still paused.
+
+Post-apply SQL verification confirmed the pause, resume, and status RPCs all have a pinned empty search path, deny `anon` and `authenticated` EXECUTE, and retain `service_role` EXECUTE. The staging database currently has one Instagram account record, zero active accounts, and zero paused accounts.
+
+The API and dashboard now use `paused_incident_id` for resume while continuing to display the latest traffic incident. Regression tests cover unauthenticated calls, stale pause IDs, already-resumed incidents, and the valid case where the latest traffic incident differs from the pause-origin incident. Full CI on the final commit is still required before merge. Do not deploy these changes to production until the production backup/recovery and migration cutover gates pass.
 
 ### Current production preflight observations (read only, 2026-11-01)
 
