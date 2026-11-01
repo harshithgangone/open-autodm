@@ -71,7 +71,7 @@ printf 'The password is not printed, but is briefly visible in the local CLI pro
 
 supabase db dump --db-url "$DATABASE_URL" --role-only -f "$BACKUP_DIR/roles.sql"
 supabase db dump --db-url "$DATABASE_URL" -f "$BACKUP_DIR/schema.sql"
-supabase db dump --db-url "$DATABASE_URL" --use-copy --data-only -f "$BACKUP_DIR/data.sql"
+supabase db dump --db-url "$DATABASE_URL" --use-copy --data-only -x "storage.buckets_vectors" -x "storage.vector_indexes" -f "$BACKUP_DIR/data.sql"
 
 for file in roles.sql schema.sql data.sql; do
   [[ -s "$BACKUP_DIR/$file" ]] || fail "Export file is missing or empty: $file"
