@@ -32,7 +32,7 @@ export async function POST(request: Request): Promise<Response> {
 
   const { data: account, error: accountError } = await db
     .from('instagram_accounts')
-    .select('id, user_id, traffic_guard_paused, traffic_guard_incident_id')
+    .select('id, user_id, traffic_guard_paused, traffic_guard_paused_incident_id')
     .eq('id', accountId)
     .single();
 
@@ -44,11 +44,11 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  // Do not let an old dashboard tab resume jobs for a newer incident, or
-  // replay a resume after the current incident has already been released.
+  // Resume the incident that owns the current pause, not necessarily the
+  // latest traffic incident. A newer spike may arrive while this pause remains.
   if (
     account.traffic_guard_paused !== true ||
-    account.traffic_guard_incident_id !== incidentId
+    account.traffic_guard_paused_incident_id !== incidentId
   ) {
     return Response.json(
       { error: 'This incident is no longer the active paused incident' },
