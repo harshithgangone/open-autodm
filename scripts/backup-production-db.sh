@@ -94,7 +94,9 @@ done
   printf 'Database port: %s\n' "$DB_PORT"
   printf 'Database name: %s\n' "$DB_NAME"
   printf '\n'
-  printf 'Scope: Supabase CLI role, schema, and data exports. See the restore runbook for exclusions and limitations.\n'
+  printf 'Scope: Supabase CLI role, schema, and data exports for supported schemas.\n'
+  printf 'Limitations: managed auth/storage schemas, Storage object bytes, platform Auth settings, and Worker secrets are not a full-project backup.\n'
+  printf 'This is a logical database export, not a PITR recovery point. See the restore runbook.\n'
 } > "$BACKUP_DIR/MANIFEST.txt"
 chmod 600 "$BACKUP_DIR/MANIFEST.txt"
 
