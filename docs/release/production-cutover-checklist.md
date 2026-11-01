@@ -17,10 +17,23 @@ Post-apply SQL verification confirmed the pause, resume, and status RPCs all hav
 
 The API and dashboard now use `paused_incident_id` for resume while continuing to display the latest traffic incident. Regression tests cover unauthenticated calls, stale pause IDs, already-resumed incidents, and the valid case where the latest traffic incident differs from the pause-origin incident. Full CI on the final commit is still required before merge. Do not deploy these changes to production until the production backup/recovery and migration cutover gates pass.
 
+### Staging Traffic Guard rollback-only transaction test (passed 2026-11-01)
+
+A database-level integration test was run against the isolated, inactive staging account inside an explicit `BEGIN ... ROLLBACK` transaction. It created temporary fixture rows, then verified the real pause/resume RPC flow:
+
+1. Pause Incident A disabled the fixture automation, recorded A as `traffic_guard_paused_incident_id`, and moved the fixture queue job from `pending` to `held`.
+2. A later Incident B was inserted and set as the latest `traffic_guard_incident_id`.
+3. `get_traffic_guard_status` returned B as the latest incident and A as the separate pause-origin incident.
+4. Resuming A reactivated only the fixture automation, released the held job to `pending`, cleared the pause-origin pointer, and preserved B as the latest traffic incident.
+5. Replaying the same resume was rejected.
+
+The transaction returned a PASS result and then rolled back. Post-test verification found zero fixture automation rows, zero fixture job rows, zero fixture incidents, and the staging account remained inactive, unpaused, with both incident pointers null. This validates the database RPC path only; it does not replace HTTP/API, signed Meta webhook, OAuth, or actual Instagram DM delivery tests.
+
 ### Current production preflight observations (read only, 2026-11-01)
 
 The live production project was re-checked against this runbook:
 
+- **Backup/recovery gate:** the linked Supabase organization is on the **Free** plan. Supabase documentation says daily automatic backups are provided on Pro, Team, and Enterprise; Free-tier projects should use manual `supabase db dump` exports and keep off-site backups. The connected management tools do not expose a completed manual dump or restore-test artifact, so production restore readiness is **unverified**. Before any production DDL, create a manual logical dump through a trusted operator environment, store it outside the project, record its timestamp/checksum, and prove it can be restored into a separate disposable project or local Postgres instance. Do not count the `restore_project` action or an unverified dashboard state as backup proof. Reference: https://supabase.com/docs/guides/platform/backups
 - **Legacy client table grants remain broad.** Direct grants to `anon` and `authenticated` still include full legacy CRUD plus `TRUNCATE`, `REFERENCES`, and `TRIGGER` privileges on multiple public tables, including `app_settings`, `automations`, `instagram_accounts`, `job_queue`, `debug_events`, `dm_jobs`, `dm_sent_log`, `contacts`, and others. RLS does not protect whole-table `TRUNCATE` or `REFERENCES` privileges. This is a production security blocker until the reviewed grants migration is applied and postflight proves the intended least-privilege state.
 - **Future-object defaults are also broad.** The `postgres` default ACL for `public` currently gives `anon` and `authenticated` table CRUD/maintenance privileges, sequence rights, and function execution. The default-privilege migrations are therefore required, not optional cleanup.
 - **Privileged RPCs remain exposed.** The targeted function ACL check found 7 backend-only SECURITY DEFINER functions executable by `anon`, and all 10 checked backend-only/traffic-guard RPCs executable by `authenticated`. The function search-path check also found `public.handle_updated_at()` without a pinned search path. The corresponding release-prep migrations address these findings.
