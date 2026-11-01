@@ -205,16 +205,93 @@ describe('Traffic Guard API Routes — Security & Owner Isolation', () => {
   });
 
   describe('POST /api/traffic-guard/resume', () => {
-    it('allows owner to resume automations with 200', async () => {
-      mockGetAuthenticatedUser.mockResolvedValueOnce({ id: 'user_owner' });
-      mockFrom.mockReturnValue({
+    const validAccount = {
+      id: '00000000-0000-0000-0000-000000000001',
+      user_id: 'user_owner',
+      traffic_guard_paused: true,
+      traffic_guard_incident_id: '00000000-0000-0000-0000-000000000002',
+    };
+    const activeIncident = {
+      id: '00000000-0000-0000-0000-000000000002',
+      paused_at: '2026-11-01T10:00:00.000Z',
+      resumed_at: null,
+    };
+
+    function queryResult(data: unknown) {
+      return {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({
-          data: { id: 'acc_1', user_id: 'user_owner' },
-          error: null,
+        single: vi.fn().mockResolvedValue({ data, error: data ? null : { message: 'Not found' } }),
+      };
+    }
+
+    it('rejects unauthenticated resume requests with 401', async () => {
+      mockGetAuthenticatedUser.mockResolvedValueOnce(null);
+      const req = new Request('http://localhost/api/traffic-guard/resume', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accountId: validAccount.id,
+          incidentId: activeIncident.id,
         }),
       });
+
+      const res = await resumeRoute(req);
+      expect(res.status).toBe(401);
+      expect(mockRpc).not.toHaveBeenCalled();
+    });
+
+    it('rejects a stale incident when a newer incident is active on the account', async () => {
+      mockGetAuthenticatedUser.mockResolvedValueOnce({ id: 'user_owner' });
+      mockFrom.mockReturnValueOnce(queryResult({
+        ...validAccount,
+        traffic_guard_incident_id: '00000000-0000-0000-0000-000000000099',
+      }));
+
+      const req = new Request('http://localhost/api/traffic-guard/resume', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accountId: validAccount.id,
+          incidentId: activeIncident.id,
+        }),
+      });
+
+      const res = await resumeRoute(req);
+      expect(res.status).toBe(409);
+      expect(mockFrom).toHaveBeenCalledTimes(1);
+      expect(mockRpc).not.toHaveBeenCalled();
+    });
+
+    it('rejects an already-resumed incident without invoking the resume RPC', async () => {
+      mockGetAuthenticatedUser.mockResolvedValueOnce({ id: 'user_owner' });
+      mockFrom
+        .mockReturnValueOnce(queryResult(validAccount))
+        .mockReturnValueOnce(queryResult({
+          ...activeIncident,
+          resumed_at: '2026-11-01T10:05:00.000Z',
+        }));
+
+      const req = new Request('http://localhost/api/traffic-guard/resume', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accountId: validAccount.id,
+          incidentId: activeIncident.id,
+        }),
+      });
+
+      const res = await resumeRoute(req);
+      expect(res.status).toBe(409);
+      expect(mockFrom).toHaveBeenCalledTimes(2);
+      expect(mockRpc).not.toHaveBeenCalled();
+    });
+
+    it('allows the owner to resume only the current paused incident', async () => {
+      mockGetAuthenticatedUser.mockResolvedValueOnce({ id: 'user_owner' });
+      mockFrom
+        .mockReturnValueOnce(queryResult(validAccount))
+        .mockReturnValueOnce(queryResult(activeIncident));
 
       mockRpc.mockResolvedValueOnce({
         data: {
@@ -229,15 +306,20 @@ describe('Traffic Guard API Routes — Security & Owner Isolation', () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          accountId: '00000000-0000-0000-0000-000000000001',
-          incidentId: '00000000-0000-0000-0000-000000000002',
+          accountId: validAccount.id,
+          incidentId: activeIncident.id,
         }),
       });
+
       const res = await resumeRoute(req);
       expect(res.status).toBe(200);
       const json = (await res.json()) as any;
       expect(json.success).toBe(true);
       expect(json.resumedAutomationIds).toHaveLength(1);
+      expect(mockRpc).toHaveBeenCalledWith('traffic_guard_resume_account', {
+        p_instagram_account_id: validAccount.id,
+        p_incident_id: activeIncident.id,
+      });
     });
   });
 
