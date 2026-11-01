@@ -135,3 +135,51 @@ The first three should be rechecked after the applicable hardening migrations. T
 ## 7. Current release decision
 
 **Not approved for full production release yet.** The Production backup/restore rehearsal and latest release-head CI passed. A compatibility candidate exists but is not deployed. Production security migrations remain pending. The next gate is clean disposable validation of the updated optional-scheduler migrations and a non-traffic Worker preview; production migrations and traffic rollout require a separate explicit approval.
+
+## 8. Read-only Production privilege and application-usage audit — 2026-11-01
+
+### Current grants observed
+
+The Production `public` schema currently grants broad privileges:
+- `anon`: 15 public tables have broad CRUD plus REFERENCES/TRIGGER/TRUNCATE grants.
+- `authenticated`: 25 public tables have broad CRUD plus REFERENCES/TRIGGER/TRUNCATE grants on many objects; a few additional tables have SELECT only.
+- `anon` and `authenticated` do **not** have CREATE on schema `public` (read-only check). Both have USAGE.
+
+The Production Security Definer inventory showed 22 `public` SECURITY DEFINER functions. Of those, 7 are executable by `anon`; 10 are executable by `authenticated`. The additionally exposed non-definer helper `public.handle_updated_at()` is also executable by client roles, though it is trigger-only. All 22 inspected functions are owned by `postgres` and executable by `service_role`.
+
+The specific currently broad SECURITY DEFINER functions are:
+- `check_and_record_dm_rate_limit(uuid,integer)`
+- `claim_due_jobs(integer)`
+- `cleanup_old_rows()`
+- `handle_new_user()` (trigger-only)
+- `increment_automation_dms_sent(uuid)`
+- `record_contact_interaction(uuid,text,text,text,uuid)`
+- `update_contact_profile(uuid,text,text,boolean)`
+
+Three Traffic Guard functions currently allow authenticated execution but not anon execution:
+- `get_traffic_guard_status(uuid)`
+- `traffic_guard_pause_account(uuid,uuid)`
+- `traffic_guard_resume_account(uuid,uuid)`
+
+### Application call-path review
+
+The reviewed server-side call paths use `createServiceClient()` for privileged RPCs:
+- `processJob.ts`: `check_and_record_dm_rate_limit`, comment reply reservation/confirmation/failure/release, and `increment_automation_dms_sent`.
+- `queue.ts`: `claim_due_jobs` and queue operations.
+- `trafficGuard/tracker.ts`: `get_traffic_guard_status`, `traffic_guard_pause_account`, and `traffic_guard_resume_account`.
+- The Traffic Guard API routes authenticate the user and check account ownership before calling the service-side tracker.
+- `cleanup_old_rows` is called from the authenticated cron route after its cron-secret check.
+
+The reviewed UI pages/hooks use application API routes for account/automation/analytics data. Direct browser Supabase usage found in the inspected paths was limited to Auth session/sign-out operations and Storage upload/public-URL operations; no public-schema RPC call was found in those reviewed files. The Storage grant surface is separate from these `public`-schema migrations.
+
+### Migration expectation
+
+The pending migrations deliberately remove broad client table/function privileges and re-grant only the documented authenticated table access, leaving server-side app access through `service_role`. Trigger-only helpers such as `handle_new_user()` and `handle_updated_at()` do not need direct client EXECUTE grants for their triggers to fire.
+
+Before Production DDL, run a disposable post-migration check proving:
+- `anon` has no privileges on public tables, sequences, or functions.
+- `authenticated` has only the explicit grants in `20261028145034_restrict_legacy_object_grants.sql`.
+- `service_role` can still execute backend RPCs and access required tables/sequences.
+- Auth session operations and Storage uploads still work, and authenticated REST API routes continue to serve application data.
+
+Do not apply Production migrations until these post-migration assertions and authenticated application smoke tests pass in the disposable lab and a fresh Production backup is verified.
