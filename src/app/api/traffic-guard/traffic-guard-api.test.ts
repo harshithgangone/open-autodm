@@ -205,14 +205,20 @@ describe('Traffic Guard API Routes — Security & Owner Isolation', () => {
   });
 
   describe('POST /api/traffic-guard/resume', () => {
+    const accountId = '00000000-0000-0000-0000-000000000001';
+    const pausedIncidentId = '00000000-0000-0000-0000-000000000002';
+    const newerIncidentId = '00000000-0000-0000-0000-000000000099';
     const validAccount = {
-      id: '00000000-0000-0000-0000-000000000001',
+      id: accountId,
       user_id: 'user_owner',
       traffic_guard_paused: true,
-      traffic_guard_incident_id: '00000000-0000-0000-0000-000000000002',
+      // A new spike may become the latest incident while the old incident
+      // still owns the active pause and the held jobs.
+      traffic_guard_incident_id: newerIncidentId,
+      traffic_guard_paused_incident_id: pausedIncidentId,
     };
-    const activeIncident = {
-      id: '00000000-0000-0000-0000-000000000002',
+    const activePausedIncident = {
+      id: pausedIncidentId,
       paused_at: '2026-11-01T10:00:00.000Z',
       resumed_at: null,
     };
@@ -230,10 +236,7 @@ describe('Traffic Guard API Routes — Security & Owner Isolation', () => {
       const req = new Request('http://localhost/api/traffic-guard/resume', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          accountId: validAccount.id,
-          incidentId: activeIncident.id,
-        }),
+        body: JSON.stringify({ accountId, incidentId: pausedIncidentId }),
       });
 
       const res = await resumeRoute(req);
@@ -241,20 +244,17 @@ describe('Traffic Guard API Routes — Security & Owner Isolation', () => {
       expect(mockRpc).not.toHaveBeenCalled();
     });
 
-    it('rejects a stale incident when a newer incident is active on the account', async () => {
+    it('rejects a stale pause incident when a different incident owns the current pause', async () => {
       mockGetAuthenticatedUser.mockResolvedValueOnce({ id: 'user_owner' });
       mockFrom.mockReturnValueOnce(queryResult({
         ...validAccount,
-        traffic_guard_incident_id: '00000000-0000-0000-0000-000000000099',
+        traffic_guard_paused_incident_id: newerIncidentId,
       }));
 
       const req = new Request('http://localhost/api/traffic-guard/resume', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          accountId: validAccount.id,
-          incidentId: activeIncident.id,
-        }),
+        body: JSON.stringify({ accountId, incidentId: pausedIncidentId }),
       });
 
       const res = await resumeRoute(req);
@@ -268,17 +268,14 @@ describe('Traffic Guard API Routes — Security & Owner Isolation', () => {
       mockFrom
         .mockReturnValueOnce(queryResult(validAccount))
         .mockReturnValueOnce(queryResult({
-          ...activeIncident,
+          ...activePausedIncident,
           resumed_at: '2026-11-01T10:05:00.000Z',
         }));
 
       const req = new Request('http://localhost/api/traffic-guard/resume', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          accountId: validAccount.id,
-          incidentId: activeIncident.id,
-        }),
+        body: JSON.stringify({ accountId, incidentId: pausedIncidentId }),
       });
 
       const res = await resumeRoute(req);
@@ -287,11 +284,11 @@ describe('Traffic Guard API Routes — Security & Owner Isolation', () => {
       expect(mockRpc).not.toHaveBeenCalled();
     });
 
-    it('allows the owner to resume only the current paused incident', async () => {
+    it('resumes the pause-origin incident even when a newer traffic incident is latest', async () => {
       mockGetAuthenticatedUser.mockResolvedValueOnce({ id: 'user_owner' });
       mockFrom
         .mockReturnValueOnce(queryResult(validAccount))
-        .mockReturnValueOnce(queryResult(activeIncident));
+        .mockReturnValueOnce(queryResult(activePausedIncident));
 
       mockRpc.mockResolvedValueOnce({
         data: {
@@ -305,10 +302,7 @@ describe('Traffic Guard API Routes — Security & Owner Isolation', () => {
       const req = new Request('http://localhost/api/traffic-guard/resume', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          accountId: validAccount.id,
-          incidentId: activeIncident.id,
-        }),
+        body: JSON.stringify({ accountId, incidentId: pausedIncidentId }),
       });
 
       const res = await resumeRoute(req);
@@ -317,8 +311,8 @@ describe('Traffic Guard API Routes — Security & Owner Isolation', () => {
       expect(json.success).toBe(true);
       expect(json.resumedAutomationIds).toHaveLength(1);
       expect(mockRpc).toHaveBeenCalledWith('traffic_guard_resume_account', {
-        p_instagram_account_id: validAccount.id,
-        p_incident_id: activeIncident.id,
+        p_instagram_account_id: accountId,
+        p_incident_id: pausedIncidentId,
       });
     });
   });
