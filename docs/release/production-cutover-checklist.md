@@ -319,7 +319,7 @@ Do not fake OAuth success by inserting a token directly into the database. If a 
 
 ## Production cron setup (operator runbook; do not run until authorized)
 
-The expected scheduler is Supabase Cron + `pg_net`; the repo's Vercel schedule is not active on the current Cloudflare deployment.
+This section documents the Supabase Cron + `pg_net` option; it is **not** the selected production scheduler until the operator records that choice. The repo's Vercel schedule is not active on the current Cloudflare deployment.
 
 **Scheduler reconciliation required (read-only snapshot, 2026-11-01):** Cloudflare currently has a separate `open-autodm-cron-dispatcher` Worker configured with a `* * * * *` Cron Trigger. Its `APP_URL` binding is present and its `CRON_SECRET` binding is configured; the production app Worker also has a `CRON_SECRET` binding. Cloudflare does not reveal secret values on read, so equality of the two secrets and successful delivery to `/api/cron/process-jobs` have **not** been verified. Separately, the production Supabase project currently has neither `pg_cron` nor `pg_net` installed and has no Supabase processor job. Treat the Cloudflare dispatcher as a potentially active scheduler until its execution is proven otherwise.
 
