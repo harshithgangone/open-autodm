@@ -65,10 +65,10 @@ export function TrafficGuardCard({ accountId }: TrafficGuardCardProps) {
   };
 
   const handleResume = async () => {
-    if (!incident?.id) return;
+    if (!guard.paused_incident_id) return;
     setActionError(null);
     try {
-      await resumeAccount({ accountId, incidentId: incident.id });
+      await resumeAccount({ accountId, incidentId: guard.paused_incident_id });
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Failed to resume account');
     }
@@ -246,7 +246,7 @@ export function TrafficGuardCard({ accountId }: TrafficGuardCardProps) {
               </button>
             )}
 
-            {isPaused && incident?.id && (
+            {isPaused && guard.paused_incident_id && (
               <button
                 onClick={handleResume}
                 disabled={isResuming}
