@@ -74,15 +74,15 @@ Every entry must report `OK`. Keep one copy on an encrypted local disk and one e
 
 This is a manual **logical database export**, not a full Supabase project backup or a PITR recovery point.
 
-The Supabase CLI filters Supabase-managed schemas by default. In particular, this export does not provide a complete copy of:
-- Supabase Auth-managed data and settings, including the Auth user/identity store.
-- Supabase Storage metadata and the actual Storage object bytes.
-- Platform-level Auth provider settings, project configuration, API keys, or Edge Function configuration.
-- Cloudflare Worker secrets and runtime bindings.
+This is not a full Supabase project backup or a PITR recovery point. Do not assume the same managed-schema coverage for every CLI/version/flag combination: inspect the actual `data.sql` and verify the objects and rows that were exported.
 
-Open AutoDM's `public.profiles.id` references `auth.users.id`. The public application data export therefore does not by itself recreate working Supabase login identities. The restore check below validates the custom application schema/data import, not an end-to-end user-authentication disaster recovery. A complete recovery plan must separately cover Auth users/identities and settings, Storage objects (if used), Supabase project settings, and Cloudflare secrets. Keep the original `TOKEN_ENCRYPTION_KEY` in a separate secrets manager: rows in `public.app_settings` and `public.instagram_accounts` contain encrypted values that cannot be decrypted without that key.
+**Observed on the production backup created 2026-11-01:** `data.sql` contained `COPY auth.users` with 2 rows and `COPY auth.identities` with 2 rows. The disposable restore logged `COPY 2` for each table, and both restored `auth.users.id` values matched the 2 restored `public.profiles.id` values. This verifies those specific user/identity rows in this specific backup; it does **not** establish complete recovery of every Auth-managed table, session, refresh token, provider configuration, or Auth setting. Repeat the dump inspection and row-level count checks for each future backup.
 
-Do not describe this export as a complete backup until those additional recovery components are separately covered.
+**Storage:** the same rehearsal restored the Storage schema and bucket-definition table. It did not include or recover the physical Storage object bytes. Do not treat bucket definitions or `storage.objects` metadata as a substitute for copying and verifying each object's bytes.
+
+The export does not include platform-level configuration such as Auth provider credentials, OAuth redirect configuration, SMTP/email templates, project/API settings, or Cloudflare Worker secrets and runtime bindings. Open AutoDM's `public.profiles.id` references `auth.users.id`; preserve and verify the Auth rows alongside profiles. Keep the original `TOKEN_ENCRYPTION_KEY` in a separate secrets manager: rows in `public.app_settings` and `public.instagram_accounts` contain encrypted values that cannot be decrypted without that key.
+
+Do not describe this export as a complete Supabase project backup. It is a verified logical database export with the specific Auth-row and Storage-schema coverage documented above; platform settings, binary Storage objects, and Cloudflare runtime/secrets require separate recovery procedures.
 
 ## 4. Restore verification on an isolated local Supabase stack
 
@@ -162,7 +162,7 @@ All listed application tables should exist. Compare row counts with read-only co
 - Successful disposable restore output.
 - Post-restore table presence, row counts, and any known restore limitations.
 
-The local restore is a schema/data import test. Because Supabase-managed Auth data is excluded by the CLI export, this test does not validate real login or identity recovery.
+The local restore is a database import test. The 2026-11-01 rehearsal verified that the two `auth.users` and two `auth.identities` rows present in that backup were restored and matched the two `public.profiles` IDs. This is database-level evidence only; it does not validate an end-to-end Supabase login, provider OAuth configuration, session recovery, or every Auth-managed table.
 
 When done, stop only the temporary local stack from its temporary lab directory:
 
@@ -183,3 +183,17 @@ Do not apply production migrations, change production Worker settings, or merge/
 5. The production Cloudflare runtime compatibility flag and scheduler/secret delivery checks are handled as separate release gates.
 
 **Never run the restore script with production connection details. It is intentionally designed for a disposable destination only.**
+
+## 7. Recorded production restore rehearsal — 2026-11-01
+
+The production logical export at the time of this rehearsal passed SHA-256 verification for `roles.sql`, `schema.sql`, `data.sql`, and `MANIFEST.txt`. The backup root and files were verified at permissions `700` and `600` respectively. The restore completed in a disposable local Supabase/PostgreSQL 17 stack using the guarded restore script; the stack was stopped after verification.
+
+The verification report recorded:
+- 20 public application tables restored with row counts matching the report's post-restore baseline.
+- 23 stored procedures/functions, 7 application triggers, 5 extensions, and 34 public foreign-key constraints were present.
+- All 34 foreign-key checks reported zero orphan references; all 34 constraints were validated.
+- All 7 application triggers were enabled.
+- The two `auth.users` and two `auth.identities` rows in the dump were restored, with 2/2 profile ID matches.
+- Storage schema and bucket definitions were restored, but physical object bytes were not.
+
+This is a successful logical database restore rehearsal, not a full project disaster-recovery drill. Preserve this distinction in release approvals.
