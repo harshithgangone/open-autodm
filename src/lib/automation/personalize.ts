@@ -17,3 +17,5 @@ export function renderTemplate(text: string, username: string | null | undefined
     .replace(/ ([!?.,])/g, '$1')
     .trim();
 }
+
+export { renderTemplate as personalizeMessage };

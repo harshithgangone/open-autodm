@@ -134,9 +134,18 @@ export async function sendInstagramDm(
   return data.message_id;
 }
 
+export interface LinkButtonConfig {
+  title: string;
+  url: string;
+}
+
 /**
- * Sends a DM as a button template with a single tappable web_url LINK button -
- * far cleaner than pasting a raw URL into the text.
+ * Sends a DM as a button template with one or more tappable web_url LINK buttons
+ * (up to Meta's 3-button limit) - far cleaner than pasting a raw URL into the text.
+ *
+ * Supports both:
+ *  - sendInstagramLinkButtonDm(igAccountIgsid, recipient, messageText, buttonTitle, url, accessToken)
+ *  - sendInstagramLinkButtonDm(igAccountIgsid, recipient, messageText, buttonsArray, accessToken)
  *
  * IMPORTANT (learned from production tools): Meta occasionally rejects button
  * templates for certain recipients/URL combinations. Callers should catch
@@ -146,11 +155,28 @@ export async function sendInstagramLinkButtonDm(
   igAccountIgsid: string,
   recipient: DmRecipient,
   messageText: string,
-  buttonTitle: string,
-  url: string,
-  accessToken: string
+  buttonOrButtons: string | LinkButtonConfig[],
+  urlOrToken: string,
+  maybeAccessToken?: string
 ): Promise<string> {
+  let buttons: LinkButtonConfig[];
+  let accessToken: string;
+
+  if (Array.isArray(buttonOrButtons)) {
+    buttons = buttonOrButtons;
+    accessToken = urlOrToken;
+  } else {
+    buttons = [{ title: buttonOrButtons, url: urlOrToken }];
+    accessToken = maybeAccessToken!;
+  }
+
   const to = recipientLabel(recipient);
+  const metaButtons = buttons.slice(0, 3).map((b) => ({
+    type: 'web_url',
+    url: b.url,
+    title: b.title.trim().slice(0, 20) || 'Open link',
+  }));
+
   const body = {
     recipient: recipientJson(recipient),
     message: {
@@ -159,7 +185,7 @@ export async function sendInstagramLinkButtonDm(
         payload: {
           template_type: 'button',
           text: messageText.slice(0, 640),
-          buttons: [{ type: 'web_url', url, title: buttonTitle.trim().slice(0, 20) || 'Open link' }],
+          buttons: metaButtons,
         },
       },
     },
@@ -168,7 +194,7 @@ export async function sendInstagramLinkButtonDm(
   debugLog('instagram', 'info', 'link_button_dm_attempt', 'processing', `Sending link-button DM to ${to}`, {
     igAccountIgsid,
     recipient: to,
-    buttonTitle,
+    buttonCount: metaButtons.length,
   });
 
   const res = await fetch(`${META_GRAPH_BASE}/${igAccountIgsid}/messages?access_token=${accessToken}`, {
@@ -193,17 +219,36 @@ export async function sendInstagramLinkButtonDm(
   return data.message_id;
 }
 
+export interface CommentReplyResult {
+  success: boolean;
+  replyId?: string;
+  error?: {
+    message: string;
+    code?: number;
+    subcode?: number;
+    fbtrace_id?: string;
+  };
+}
+
 /** Posts a public reply to a comment. Non-fatal - DM still sends on failure. */
-export async function replyToComment(commentId: string, replyText: string, accessToken: string): Promise<void> {
+export async function replyToComment(
+  commentId: string,
+  replyText: string,
+  accessToken: string
+): Promise<CommentReplyResult> {
   debugLog('instagram', 'info', 'comment_reply_attempt', 'processing', `Replying to comment ${commentId}`, {
     commentId,
     replyPreview: replyText.slice(0, 80),
   });
 
-  const res = await fetch(`${META_GRAPH_BASE}/${commentId}/replies`, {
+  const url = `${META_GRAPH_BASE}/${commentId}/replies`;
+  const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: replyText, access_token: accessToken }),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ message: replyText }),
   });
 
   if (!res.ok) {
@@ -211,10 +256,29 @@ export async function replyToComment(commentId: string, replyText: string, acces
     logger.warn({ commentId, status: res.status, metaCode: body.error?.code }, 'Comment reply failed - continuing');
     debugLog('instagram', 'warn', 'comment_reply_failed', 'error',
       `Comment reply to ${commentId} failed - ${body.error?.code}: ${body.error?.message ?? 'unknown'} (DM will still send)`,
-      { commentId, httpStatus: res.status });
-  } else {
-    debugLog('instagram', 'info', 'comment_reply_sent', 'ok', `Public reply posted to comment ${commentId}`, { commentId });
+      { commentId, httpStatus: res.status, metaErrorCode: body.error?.code });
+    return {
+      success: false,
+      error: body.error
+        ? {
+            message: body.error.message,
+            code: body.error.code,
+            subcode: body.error.error_subcode,
+            fbtrace_id: body.error.fbtrace_id,
+          }
+        : { message: `HTTP ${res.status} error` },
+    };
   }
+
+  const data = (await res.json()) as { id?: string };
+  debugLog('instagram', 'info', 'comment_reply_sent', 'ok', `Public reply posted to comment ${commentId} - replyId=${data.id}`, {
+    commentId,
+    replyId: data.id,
+  });
+  return {
+    success: true,
+    replyId: data.id,
+  };
 }
 
 /** Sends the ask-to-follow generic template (Visit Profile + confirm postback). */

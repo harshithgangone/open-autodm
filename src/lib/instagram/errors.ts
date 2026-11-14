@@ -46,6 +46,13 @@ export class AccountPausedMetaError extends MetaApiError {
   }
 }
 
+export class AmbiguousDeliveryError extends Error {
+  constructor(message = 'Ambiguous delivery outcome: request may have reached Meta, failing closed to prevent duplicate DM') {
+    super(message);
+    this.name = 'AmbiguousDeliveryError';
+  }
+}
+
 export function classifyMetaError(message: string, code: number | undefined, subcode: number | undefined): MetaApiError {
   if (code !== undefined && (ACCOUNT_PAUSE_CODES as readonly number[]).includes(code)) {
     return new AccountPausedMetaError(message, code, subcode);

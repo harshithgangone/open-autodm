@@ -15,10 +15,12 @@
 import { processDueJobs } from '@/lib/automation/engine';
 import { createServiceClient } from '@/lib/supabase/service';
 import { refreshLongLivedToken } from '@/lib/instagram/oauth';
-import { decrypt, encrypt, safeCompare } from '@/lib/crypto';
+import { decrypt, encrypt } from '@/lib/crypto';
 import { getEnv } from '@/lib/env';
 import { createLogger } from '@/lib/logger';
 import { debugLog } from '@/lib/debugLog';
+import { verifyCronAuthorization } from '@/lib/auth';
+import { evaluateOpenIncidents } from '@/lib/trafficGuard/tracker';
 import type { InstagramAccountRow } from '@/lib/types';
 
 export const runtime = 'nodejs';
@@ -28,10 +30,7 @@ export const maxDuration = 60;
 const logger = createLogger('cron');
 
 function isAuthorized(request: Request): boolean {
-  const env = getEnv();
-  const header = request.headers.get('authorization') ?? '';
-  const provided = header.startsWith('Bearer ') ? header.slice(7) : new URL(request.url).searchParams.get('secret') ?? '';
-  return provided.length > 0 && safeCompare(provided, env.CRON_SECRET);
+  return verifyCronAuthorization(request);
 }
 
 async function refreshExpiringTokens(): Promise<number> {
@@ -86,6 +85,7 @@ async function handle(request: Request): Promise<Response> {
 
   const drain = await processDueJobs(25);
   const tokensRefreshed = await refreshExpiringTokens();
+  const incidentsEvaluated = await evaluateOpenIncidents();
 
   const db = createServiceClient();
   const { error: cleanupError } = await db.rpc('cleanup_old_rows');
@@ -95,6 +95,7 @@ async function handle(request: Request): Promise<Response> {
     ok: true,
     jobs: drain,
     tokensRefreshed,
+    incidentsEvaluated,
     at: new Date().toISOString(),
   });
 }

@@ -14,6 +14,10 @@ const SUPABASE_URL = process.env['NEXT_PUBLIC_SUPABASE_URL']!;
 const SUPABASE_ANON_KEY = process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!;
 
 export async function middleware(request: NextRequest) {
+  if (process.env.E2E_MOCK_AUTH === 'true') {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -40,15 +44,16 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/dashboard') ||
     pathname.startsWith('/automations') ||
     pathname.startsWith('/settings') ||
-    pathname.startsWith('/setup');
+    pathname.startsWith('/setup') ||
+    pathname.startsWith('/analytics');
 
   if (isProtectedRoute && !user) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = '/';
+    redirectUrl.pathname = '/login';
     return NextResponse.redirect(redirectUrl);
   }
 
-  if (pathname === '/' && user) {
+  if (pathname === '/login' && user) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = '/dashboard';
     return NextResponse.redirect(redirectUrl);

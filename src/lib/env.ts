@@ -17,6 +17,8 @@ const serverEnvSchema = z.object({
     .string()
     .regex(/^[0-9a-f]{64}$/i, 'TOKEN_ENCRYPTION_KEY must be exactly 64 hex characters (32 bytes)'),
   CRON_SECRET: z.string().min(16, 'CRON_SECRET must be at least 16 characters'),
+  OWNER_EMAIL: z.string().email().optional().or(z.literal('').transform(() => undefined)),
+  OWNER_USER_ID: z.string().uuid().optional().or(z.literal('').transform(() => undefined)),
 });
 
 const publicEnvSchema = z.object({
@@ -36,6 +38,8 @@ export function getEnv(): ServerEnv {
     SUPABASE_SERVICE_ROLE_KEY: process.env['SUPABASE_SERVICE_ROLE_KEY'],
     TOKEN_ENCRYPTION_KEY: process.env['TOKEN_ENCRYPTION_KEY'],
     CRON_SECRET: process.env['CRON_SECRET'],
+    OWNER_EMAIL: process.env['OWNER_EMAIL'],
+    OWNER_USER_ID: process.env['OWNER_USER_ID'],
   });
 
   const publicResult = publicEnvSchema.safeParse({
@@ -62,6 +66,11 @@ export function getEnv(): ServerEnv {
   return cached;
 }
 
+/** Test-only escape hatch: clears the env cache. */
+export function _resetEnvCacheForTesting(): void {
+  cached = null;
+}
+
 /**
  * Resolve the deployment's public base URL.
  * Prefers NEXT_PUBLIC_APP_URL; falls back to the incoming request origin so
@@ -77,4 +86,23 @@ export function getAppUrl(request?: Request): string {
     return `${proto}://${host}`;
   }
   throw new Error('NEXT_PUBLIC_APP_URL is not set and no request context is available');
+}
+
+/**
+ * Safe navigation link for the dashboard in public documentation and legal pages.
+ * Always resolves to a site-relative href ('/') for bulletproof internal routing,
+ * with a clean label matching the public URL or generic fallback.
+ */
+export function getDashboardLink(appUrlOverride?: string): { href: string; label: string } {
+  const fromEnv = appUrlOverride ?? process.env['NEXT_PUBLIC_APP_URL'];
+  if (fromEnv) {
+    return {
+      href: '/',
+      label: fromEnv.replace(/\/$/, ''),
+    };
+  }
+  return {
+    href: '/',
+    label: 'the dashboard',
+  };
 }

@@ -12,7 +12,7 @@
 import { z } from 'zod';
 import { getAuthenticatedUser, unauthorized } from '@/lib/auth';
 import { createServiceClient } from '@/lib/supabase/service';
-import { getMetaSettings, saveMetaSettings } from '@/lib/settings';
+import { getMetaSettings, isEnvironmentOwner, isInstallationOwner, saveMetaSettings } from '@/lib/settings';
 import { randomToken } from '@/lib/crypto';
 import { getAppUrl, getEnv } from '@/lib/env';
 
@@ -34,8 +34,11 @@ function cronSnippet(appUrl: string): string {
   return `-- Run this ONCE in your Supabase project's SQL Editor.
 -- It makes Supabase call your deployment every minute to process
 -- queued/delayed DM jobs and auto-refresh Instagram tokens.
+-- Existing installations that already have pg_net in public need the
+-- dedicated guarded move_pg_net_to_extensions migration before this is used.
 create extension if not exists pg_cron;
-create extension if not exists pg_net;
+create schema if not exists extensions;
+create extension if not exists pg_net with schema extensions;
 
 select cron.schedule(
   'open-autodm-process-jobs',
@@ -54,17 +57,33 @@ export async function GET(request: Request): Promise<Response> {
   const user = await getAuthenticatedUser(request);
   if (!user) return unauthorized();
 
-  const settings = await getMetaSettings();
-  const appUrl = getAppUrl(request);
-
-  // Read the raw row too - settings is null until fully configured, but a
-  // partially-saved verify token should survive wizard re-entry.
+  // Read owner metadata before returning the webhook verify token or other
+  // setup details. Fail closed if the database lookup itself fails.
   const db = createServiceClient();
-  const { data: row } = await db
+  const { data: row, error } = await db
     .from('app_settings')
-    .select('meta_app_id, webhook_verify_token, setup_completed')
+    .select('meta_app_id, webhook_verify_token, setup_completed, owner_user_id')
     .eq('id', 1)
     .maybeSingle();
+
+  if (error) {
+    return Response.json({ error: 'Unable to verify installation ownership' }, { status: 500 });
+  }
+  const recordedOwnerId = (row?.owner_user_id as string | null) ?? null;
+  const envOwner = isEnvironmentOwner(user);
+  // The ownerless fallback is only for a genuinely fresh setup. Do not let an
+  // arbitrary authenticated user claim a legacy installation that is already
+  // configured but never recorded an owner; that requires explicit env-owner
+  // configuration first.
+  if (
+    (Boolean(row?.setup_completed) && !recordedOwnerId && !envOwner) ||
+    !isInstallationOwner(user, recordedOwnerId)
+  ) {
+    return Response.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  const settings = await getMetaSettings();
+  const appUrl = getAppUrl(request);
 
   return Response.json({
     configured: !!settings,
@@ -102,20 +121,42 @@ export async function POST(request: Request): Promise<Response> {
     // Preserve the existing verify token if one was generated before -
     // regenerating it would silently break the webhook registered in Meta.
     const db = createServiceClient();
-    const { data: existing } = await db
+    const { data: existing, error: lookupError } = await db
       .from('app_settings')
-      .select('webhook_verify_token')
+      .select('webhook_verify_token, owner_user_id, setup_completed')
       .eq('id', 1)
       .maybeSingle();
 
+    if (lookupError) {
+      return Response.json({ error: 'Unable to verify installation ownership' }, { status: 500 });
+    }
+    const recordedOwnerId = (existing?.owner_user_id as string | null) ?? null;
+    const envOwner = isEnvironmentOwner(user);
+    if (
+      (Boolean(existing?.setup_completed) && !recordedOwnerId && !envOwner) ||
+      !isInstallationOwner(user, recordedOwnerId)
+    ) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     const verifyToken = (existing?.webhook_verify_token as string | null) ?? randomToken(16);
 
-    await saveMetaSettings({
+    // Atomically claim an unowned installation on first setup; if another
+    // user won that race, saveMetaSettings returns success=false.
+    const saved = await saveMetaSettings({
       metaAppId: parsed.data.metaAppId,
       metaAppSecret: parsed.data.metaAppSecret,
       metaFbAppSecret: parsed.data.metaFbAppSecret ?? null,
       webhookVerifyToken: verifyToken,
+      ownerUserId: user.id,
+      isEnvOwner: envOwner,
     });
+    if (!saved.success) {
+      return Response.json(
+        { error: 'Installation ownership changed or setup row is missing; reload and retry as the owner.' },
+        { status: 409 }
+      );
+    }
 
     const appUrl = getAppUrl(request);
     return Response.json({

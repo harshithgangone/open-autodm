@@ -24,12 +24,21 @@ export function retryBackoffMs(attempts: number): number {
 export async function enqueueJob(
   jobType: 'auto_dm' | 'follow_up',
   payload: AutoDmJobPayload,
-  dedupeKey: string
+  dedupeKey: string,
+  runAfter?: Date
 ): Promise<string | null> {
   const db = createServiceClient();
+  const insertData: Record<string, unknown> = {
+    job_type: jobType,
+    payload,
+    dedupe_key: dedupeKey,
+  };
+  if (runAfter) {
+    insertData.run_after = runAfter.toISOString();
+  }
   const { data, error } = await db
     .from('job_queue')
-    .insert({ job_type: jobType, payload, dedupe_key: dedupeKey })
+    .insert(insertData)
     .select('id')
     .maybeSingle();
 
@@ -70,6 +79,14 @@ export async function markJobFailed(jobId: string, errorMessage: string): Promis
   await db
     .from('job_queue')
     .update({ status: 'failed', locked_at: null, last_error: errorMessage.slice(0, 2000) })
+    .eq('id', jobId);
+}
+
+export async function markJobHeld(jobId: string, reason: string): Promise<void> {
+  const db = createServiceClient();
+  await db
+    .from('job_queue')
+    .update({ status: 'held', locked_at: null, last_error: reason.slice(0, 500) })
     .eq('id', jobId);
 }
 

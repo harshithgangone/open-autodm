@@ -12,6 +12,7 @@ import { createClient } from '@supabase/supabase-js';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { getEnv } from '@/lib/env';
+import { safeCompare } from '@/lib/crypto';
 
 export interface AuthenticatedUser {
   id: string;
@@ -49,4 +50,13 @@ export async function getAuthenticatedUser(request: Request): Promise<Authentica
 
 export function unauthorized(): Response {
   return Response.json({ error: 'Unauthorized', message: 'Valid session required' }, { status: 401 });
+}
+
+/** Verifies that a background cron request carries a valid Bearer token matching CRON_SECRET. */
+export function verifyCronAuthorization(request: Request): boolean {
+  const env = getEnv();
+  const header = request.headers.get('authorization') ?? '';
+  if (!header.startsWith('Bearer ')) return false;
+  const token = header.slice(7).trim();
+  return token.length > 0 && safeCompare(token, env.CRON_SECRET);
 }

@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { getAuthenticatedUser, unauthorized } from '@/lib/auth';
 import { createServiceClient } from '@/lib/supabase/service';
 import { createLogger } from '@/lib/logger';
-import { DMResponseSchema, MAX_DM_RESPONSES } from '@/lib/api/schemas';
+import { DMResponseSchema, MAX_DM_RESPONSES, FlowGraphSchema } from '@/lib/api/schemas';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -14,12 +14,19 @@ export const dynamic = 'force-dynamic';
 const logger = createLogger('api:automations:id');
 
 const UpdateAutomationSchema = z.object({
+  type: z.enum(['comment_dm', 'dm_reply', 'story_reply', 'reel_dm']).optional(),
   is_active: z.boolean().optional(),
   name: z.string().min(1).max(200).optional(),
+  post_id: z.string().nullable().optional(),
   keywords: z.array(z.string()).nullable().optional(),
   comment_reply_options: z.array(z.string()).optional(),
+  public_reply_enabled: z.boolean().optional(),
+  public_reply_mode: z.enum(['manual', 'ai_generated']).optional(),
+  public_reply_options: z.array(z.string()).optional(),
+  public_reply_ai_instructions: z.string().nullable().optional(),
   dm_opening_message_enabled: z.boolean().optional(),
   dm_opening_message: z.string().optional(),
+  dm_opening_message_variations: z.array(z.string()).optional(),
   dm_opening_message_button_title: z.string().nullable().optional(),
   dm_opening_message_button_link: z.string().nullable().optional(),
   post_thumbnail_url: z.string().nullable().optional(),
@@ -29,6 +36,15 @@ const UpdateAutomationSchema = z.object({
   ask_to_follow_visit_profile_button: z.string().optional(),
   ask_to_follow_confirm_button: z.string().optional(),
   dm_responses: z.array(DMResponseSchema).max(MAX_DM_RESPONSES, `Max ${MAX_DM_RESPONSES} responses per automation`).optional(),
+  follow_up_enabled: z.boolean().optional(),
+  follow_up_delay_minutes: z.union([z.literal(10), z.literal(20), z.literal(60), z.literal(120)]).optional(),
+  follow_up_message: z.string().max(1000).optional(),
+  follow_up_ai_instructions: z.string().max(500).nullable().optional(),
+  ai_runtime_mode_enabled: z.boolean().optional(),
+  ai_runtime_instructions: z.string().nullable().optional(),
+  ai_model: z.string().optional(),
+  flow_graph: FlowGraphSchema.nullable().optional(),
+  trigger_config: z.record(z.unknown()).nullable().optional(),
 });
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -64,13 +80,38 @@ export async function PUT(request: Request, context: RouteContext): Promise<Resp
     return Response.json({ error: 'Automation not found' }, { status: 404 });
   }
 
-  const { data: updated, error: updateError } = await db
+  const updatePayload: Record<string, unknown> = {
+    ...parsed.data,
+    updated_at: new Date().toISOString(),
+  };
+  if (parsed.data.keywords !== undefined) {
+    updatePayload.keywords =
+      parsed.data.keywords && parsed.data.keywords.length > 0 && !parsed.data.keywords.includes('*ANY*')
+        ? parsed.data.keywords.map((k) => k.trim().toUpperCase()).filter(Boolean)
+        : null;
+  }
+
+  let { data: updated, error: updateError } = await db
     .from('automations')
-    .update({ ...parsed.data, updated_at: new Date().toISOString() })
+    .update(updatePayload)
     .eq('id', id)
     .eq('user_id', user.id)
     .select('id, name, type, is_active, total_dms_sent, updated_at')
     .single();
+
+  if (updateError && (updateError.message?.includes('flow_graph') || updateError.message?.includes('trigger_config') || updateError.message?.includes('schema'))) {
+    delete updatePayload.flow_graph;
+    delete updatePayload.trigger_config;
+    const res = await db.from('automations').update(updatePayload).eq('id', id).eq('user_id', user.id).select('id, name, type, is_active, total_dms_sent, updated_at').single();
+    updated = res.data;
+    updateError = res.error;
+  }
+  if (updateError && updateError.message?.includes('automation_type') && updatePayload.type === 'reel_dm') {
+    updatePayload.type = 'dm_reply';
+    const res = await db.from('automations').update(updatePayload).eq('id', id).eq('user_id', user.id).select('id, name, type, is_active, total_dms_sent, updated_at').single();
+    updated = res.data;
+    updateError = res.error;
+  }
 
   if (updateError) {
     logger.error({ err: updateError, automationId: id }, 'Failed to update automation');

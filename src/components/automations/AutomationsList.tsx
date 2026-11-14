@@ -115,6 +115,15 @@ export function AutomationsList({ automations, isLoading, onToggle, onDelete, on
                                         <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0", typeConfig.className)}>
                                             {typeConfig.label}
                                         </span>
+                                        {automation.is_traffic_guard_paused ? (
+                                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                                                Paused by Traffic Guard
+                                            </span>
+                                        ) : !isActive ? (
+                                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 bg-muted text-muted-foreground border border-border">
+                                                Inactive (Manual)
+                                            </span>
+                                        ) : null}
                                     </div>
                                     <div className="flex items-center text-[12px] text-muted-foreground gap-3 min-w-0">
                                         <span className="flex items-center gap-1 truncate">
@@ -153,7 +162,7 @@ export function AutomationsList({ automations, isLoading, onToggle, onDelete, on
                                                 "relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
                                                 isActive ? "bg-secondary cursor-pointer" : "bg-muted cursor-not-allowed"
                                             )}
-                                            title={isActive ? "Pause automation" : "Open edit to activate"}
+                                            title={automation.is_traffic_guard_paused ? "Paused by Traffic Guard" : (isActive ? "Pause automation" : "Open edit to activate")}
                                         >
                                             <span className={cn(
                                                 "pointer-events-none inline-block h-4 w-4 translate-y-[2px] rounded-full bg-white shadow-sm transition-transform",

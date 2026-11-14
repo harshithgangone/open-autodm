@@ -134,6 +134,32 @@
   }
 }
 
+@keyframes floatSlow {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes floatDelayed {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(8px);
+  }
+}
+
+.animate-float-slow {
+  animation: floatSlow 7s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: floatDelayed 8.5s ease-in-out 1s infinite;
+}
+
 .custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;

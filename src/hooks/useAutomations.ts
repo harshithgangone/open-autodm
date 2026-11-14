@@ -3,19 +3,25 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient, ApiError } from '@/lib/api/client';
 import { createBrowserClient } from '@/lib/supabase';
+import type { FlowGraph } from '@/lib/types';
 
 export interface AutomationFromDB {
   id: string;
   name: string;
-  type: 'comment_dm' | 'dm_reply' | 'story_reply';
+  type: 'comment_dm' | 'dm_reply' | 'story_reply' | 'reel_dm';
   is_active: boolean;
   post_id: string | null;
   post_thumbnail_url: string | null;
   post_caption: string | null;
   keywords: string[] | null;
   comment_reply_options: string[];
+  public_reply_enabled?: boolean;
+  public_reply_mode?: 'manual' | 'ai_generated';
+  public_reply_options?: string[];
+  public_reply_ai_instructions?: string | null;
   dm_opening_message_enabled: boolean;
   dm_opening_message: string;
+  dm_opening_message_variations?: string[];
   dm_opening_message_button_title: string | null;
   dm_opening_message_button_link: string | null;
   ask_to_follow_enabled: boolean;
@@ -23,9 +29,20 @@ export interface AutomationFromDB {
   ask_to_follow_visit_profile_button: string;
   ask_to_follow_confirm_button: string;
   dm_responses: DMResponse[];
+  follow_up_enabled?: boolean;
+  follow_up_delay_minutes?: number;
+  follow_up_message?: string;
+  follow_up_ai_instructions?: string | null;
+  ai_runtime_mode_enabled?: boolean;
+  ai_runtime_instructions?: string | null;
+  ai_model?: string;
   total_dms_sent: number;
+  is_traffic_guard_paused?: boolean;
+  traffic_guard_paused_at?: string | null;
+  traffic_guard_incident_id?: string | null;
   created_at: string;
   updated_at: string;
+  flow_graph?: FlowGraph | null;
   instagram_account_id: string;
   instagram_accounts: {
     id: string;
@@ -40,6 +57,7 @@ export interface DMResponse {
   content: string;
   buttonTitle?: string;
   buttonLink?: string;
+  buttons?: { id: string; title: string; link: string }[];
   cardImage?: string;
   cardTitle?: string;
   cardSubtitle?: string;
@@ -49,15 +67,20 @@ export interface DMResponse {
 export interface CreateAutomationPayload {
   instagramAccountId: string;
   name: string;
-  type: 'comment_dm' | 'dm_reply' | 'story_reply';
+  type: 'comment_dm' | 'dm_reply' | 'story_reply' | 'reel_dm';
   isActive?: boolean;
   postId?: string | null;
   postThumbnailUrl?: string | null;
   postCaption?: string | null;
   keywords?: string[] | null;
   commentReplyOptions?: string[];
+  publicReplyEnabled?: boolean;
+  publicReplyMode?: 'manual' | 'ai_generated';
+  publicReplyOptions?: string[];
+  publicReplyAiInstructions?: string | null;
   dmOpeningMessageEnabled?: boolean;
   dmOpeningMessage?: string;
+  dmOpeningMessageVariations?: string[];
   dmOpeningMessageButtonTitle?: string | null;
   dmOpeningMessageButtonLink?: string | null;
   askToFollowEnabled?: boolean;
@@ -65,24 +88,58 @@ export interface CreateAutomationPayload {
   askToFollowVisitProfileButton?: string;
   askToFollowConfirmButton?: string;
   dmResponses?: DMResponse[];
+  followUpEnabled?: boolean;
+  followUpDelayMinutes?: number;
+  followUpMessage?: string;
+  followUpAiInstructions?: string | null;
+  aiRuntimeModeEnabled?: boolean;
+  aiRuntimeInstructions?: string | null;
+  aiModel?: string;
+  flowGraph?: FlowGraph | null;
+  triggerConfig?: any;
 }
 
 export interface UpdateAutomationPayload {
+  type?: 'comment_dm' | 'dm_reply' | 'story_reply' | 'reel_dm';
   is_active?: boolean;
   name?: string;
+  post_id?: string | null;
   keywords?: string[] | null;
   comment_reply_options?: string[];
+  public_reply_enabled?: boolean;
+  public_reply_mode?: 'manual' | 'ai_generated';
+  public_reply_options?: string[];
+  public_reply_ai_instructions?: string | null;
   dm_opening_message_enabled?: boolean;
   dm_opening_message?: string;
+  dm_opening_message_variations?: string[];
   dm_opening_message_button_title?: string | null;
   dm_opening_message_button_link?: string | null;
+  dmOpeningMessageEnabled?: boolean;
+  dmOpeningMessage?: string;
+  dmOpeningMessageVariations?: string[];
+  dmOpeningMessageButtonTitle?: string | null;
+  dmOpeningMessageButtonLink?: string | null;
   post_thumbnail_url?: string | null;
   post_caption?: string | null;
   ask_to_follow_enabled?: boolean;
   ask_to_follow_message?: string;
   ask_to_follow_visit_profile_button?: string;
   ask_to_follow_confirm_button?: string;
+  askToFollowEnabled?: boolean;
+  askToFollowMessage?: string;
+  askToFollowVisitProfileButton?: string;
+  askToFollowConfirmButton?: string;
   dm_responses?: DMResponse[];
+  follow_up_enabled?: boolean;
+  follow_up_delay_minutes?: number;
+  follow_up_message?: string;
+  follow_up_ai_instructions?: string | null;
+  ai_runtime_mode_enabled?: boolean;
+  ai_runtime_instructions?: string | null;
+  ai_model?: string;
+  flow_graph?: FlowGraph | null;
+  trigger_config?: any;
 }
 
 /** Upload base64 card images to Supabase Storage and return responses with public URLs. */

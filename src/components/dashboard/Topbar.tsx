@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { NotificationCenter } from "@/components/dashboard/NotificationCenter";
 import { useUiStore } from "@/lib/store";
 
 const TITLES: Record<string, string> = {
@@ -31,7 +32,10 @@ export function Topbar() {
                 <h1 className="text-[15px] font-heading font-semibold tracking-tight text-foreground">{title}</h1>
             </div>
 
-            <ThemeToggle />
+            <div className="flex items-center gap-1.5">
+                <NotificationCenter />
+                <ThemeToggle />
+            </div>
         </header>
     );
 }

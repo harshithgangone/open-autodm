@@ -10,15 +10,22 @@
 
 import { createLogger } from '@/lib/logger';
 import { debugLog } from '@/lib/debugLog';
-import { claimDueJobs, markJobDone, markJobFailed, rescheduleJob, retryBackoffMs } from '@/lib/automation/queue';
+import { claimDueJobs, markJobDone, markJobFailed, markJobHeld, rescheduleJob, retryBackoffMs } from '@/lib/automation/queue';
 import {
   processAutoDmJob,
   processFollowUpDmJob,
   pauseAccount,
   RateLimitDelay,
   AccountOnPause,
+  AccountOnTrafficGuardPause,
 } from '@/lib/automation/processJob';
-import { AccountPausedMetaError, NonRetryableMetaError, MetaApiError, META_RATE_LIMIT_CODES } from '@/lib/instagram/errors';
+import {
+  AccountPausedMetaError,
+  NonRetryableMetaError,
+  MetaApiError,
+  META_RATE_LIMIT_CODES,
+  AmbiguousDeliveryError,
+} from '@/lib/instagram/errors';
 import type { JobQueueRow } from '@/lib/types';
 
 const logger = createLogger('engine');
@@ -86,6 +93,13 @@ async function runJob(job: JobQueueRow, result: DrainResult): Promise<void> {
       return;
     }
 
+    if (err instanceof AccountOnTrafficGuardPause) {
+      // Traffic Guard pause is active - hold the job instead of sending or failing
+      await markJobHeld(job.id, 'Held by Traffic Guard pause');
+      result.rescheduled += 1;
+      return;
+    }
+
     if (err instanceof AccountPausedMetaError) {
       // Meta says this account is policy-blocked - open the breaker for 24h
       // and stop retrying. Protecting the creator's account beats delivering
@@ -103,6 +117,15 @@ async function runJob(job: JobQueueRow, result: DrainResult): Promise<void> {
       debugLog('worker', 'error', 'job_failed', 'error',
         `Non-retryable Meta error - code ${err.code}: ${err.message}`,
         { jobId: job.id, metaCode: err.code, hint: 'Code 190 = expired token, 10 = permission denied, 100 = invalid param' });
+      await markJobFailed(job.id, err.message);
+      result.failed += 1;
+      return;
+    }
+
+    if (err instanceof AmbiguousDeliveryError) {
+      debugLog('worker', 'error', 'job_failed', 'error',
+        `Ambiguous delivery error - failing closed to prevent duplicate private reply: ${err.message}`,
+        { jobId: job.id });
       await markJobFailed(job.id, err.message);
       result.failed += 1;
       return;

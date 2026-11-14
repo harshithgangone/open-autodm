@@ -20,6 +20,16 @@ export const AUTOMATION_TYPES = [
         iconColor: "text-blue-500"
     },
     {
+        id: "reel-dm",
+        name: "Someone sends me a Reel",
+        description: "Auto-reply when someone shares a Reel to your direct messages.",
+        iconType: "film",
+        available: true,
+        bg: "from-purple-500/20 to-pink-500/10",
+        border: "group-hover:border-purple-500/50",
+        iconColor: "text-purple-500"
+    },
+    {
         id: "story-reply",
         name: "Story Reply",
         description: "Send an automated response when someone replies to your story.",

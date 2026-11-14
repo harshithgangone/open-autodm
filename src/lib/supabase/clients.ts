@@ -13,15 +13,16 @@
 
 import { createBrowserClient as _createBrowserClient, createServerClient as _createServerClient } from '@supabase/ssr';
 
-const SUPABASE_URL = process.env['NEXT_PUBLIC_SUPABASE_URL']!;
-const SUPABASE_ANON_KEY = process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!;
-
 export function createBrowserClient() {
-  return _createBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env['NEXT_PUBLIC_SUPABASE_URL']!;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!;
+  return _createBrowserClient(url, anonKey);
 }
 
 export function createServerClient(cookies: { getAll(): { name: string; value: string }[]; set?(name: string, value: string, options?: Record<string, unknown>): void }) {
-  return _createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env['NEXT_PUBLIC_SUPABASE_URL']!;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!;
+  return _createServerClient(url, anonKey, {
     cookies: {
       getAll() {
         return cookies.getAll();

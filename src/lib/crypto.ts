@@ -6,7 +6,7 @@
  * `nodejs_compat` flag (node:crypto is supported by workerd).
  */
 
-import { createCipheriv, createDecipheriv, randomBytes, timingSafeEqual, createHmac } from 'node:crypto';
+import { createCipheriv, createDecipheriv, randomBytes, timingSafeEqual, createHmac, createHash } from 'node:crypto';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12; // 96-bit IV - recommended for GCM
@@ -47,12 +47,11 @@ export function decrypt(encryptedString: string, encryptionKeyHex: string): stri
   return decrypted.toString('utf8');
 }
 
-/** Constant-time comparison - prevents timing attacks on webhook signatures. */
+/** Constant-time comparison - prevents timing attacks on secrets and signatures without leaking string lengths. */
 export function safeCompare(a: string, b: string): boolean {
-  const bufA = Buffer.from(a);
-  const bufB = Buffer.from(b);
-  if (bufA.length !== bufB.length) return false;
-  return timingSafeEqual(bufA, bufB);
+  const hashA = createHash('sha256').update(a).digest();
+  const hashB = createHash('sha256').update(b).digest();
+  return timingSafeEqual(hashA, hashB);
 }
 
 /** HMAC-SHA256 hex digest - used for Meta webhook signature verification. */

@@ -1,0 +1,90 @@
+name: Release-prep validation
+
+on:
+  push:
+    branches:
+      - opendm-release-prep
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-typecheck:
+    name: Vitest + TypeScript
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Validate operational shell scripts
+        run: bash -n scripts/backup-production-db.sh scripts/restore-verify-db.sh
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: TypeScript check
+        run: npm run typecheck
+
+      - name: Production build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-only-dummy-anon-key-000000000000000000000000
+          SUPABASE_SERVICE_ROLE_KEY: ci-only-dummy-service-role-key-000000000000
+          TOKEN_ENCRYPTION_KEY: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          CRON_SECRET: ci-only-cron-secret-not-for-deployment
+          NEXT_PUBLIC_APP_URL: https://example.com
+
+      - name: Set up Python for browser QA
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Install Playwright Chromium
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Start app and run desktop/mobile browser QA
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-only-dummy-anon-key-000000000000000000000000
+          SUPABASE_SERVICE_ROLE_KEY: ci-only-dummy-service-role-key-000000000000
+          TOKEN_ENCRYPTION_KEY: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          CRON_SECRET: ci-only-cron-secret-not-for-deployment
+          NEXT_PUBLIC_APP_URL: http://localhost:3005
+        run: |
+          npm run start -- --port 3005 > /tmp/open-autodm-next.log 2>&1 &
+          for attempt in {1..60}; do
+            if curl --fail --silent http://localhost:3005/ > /dev/null; then
+              break
+            fi
+            sleep 2
+          done
+          if ! curl --fail --silent http://localhost:3005/ > /dev/null; then
+            cat /tmp/open-autodm-next.log
+            exit 1
+          fi
+          python tests/e2e/test_pricing_browser_qa.py
+
+      - name: Upload browser QA screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: open-autodm-browser-qa-screenshots
+          path: tests/e2e/screenshots/*.png
+          if-no-files-found: ignore

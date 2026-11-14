@@ -8,10 +8,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "test": "vitest run",
+    "test:db": "bash scripts/test-db-concurrency.sh",
     "typecheck": "tsc --noEmit",
-    "cf:build": "opennextjs-cloudflare build",
-    "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
+    "cf:build": "opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion",
+    "cf:preview": "opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion && opennextjs-cloudflare preview",
+    "cf:deploy": "opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion && opennextjs-cloudflare deploy"
   },
   "dependencies": {
     "@supabase/ssr": "^0.9.0",
@@ -38,6 +40,10 @@
     "@types/react-dom": "^19.1.0",
     "tailwindcss": "^4.1.0",
     "typescript": "^5.8.0",
+    "vitest": "^5.0.5",
     "wrangler": "^4.20.0"
+  },
+  "overrides": {
+    "postcss": "^8.5.31"
   }
 }
